@@ -1,0 +1,15 @@
+config BR2_PACKAGE_POSTGRESQL
+	bool "postgresql"
+	depends on BR2_USE_MMU # fork()
+	help
+	  PostgreSQL is a powerful, open source object-relational
+	  database system.
+
+	  Enable the readline package to gain readline support in
+	  pgsql (the command line interpreter), which offers
+	  command history and edit functions.
+
+	  Enable the zlib package to gain builtin compression for
+	  archives with pg_dump and pg_restore.
+
+	  http://www.postgresql.org
