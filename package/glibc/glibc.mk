@@ -11,7 +11,7 @@ GLIBC_SITE = http://downloads.yoctoproject.org/releases/eglibc
 GLIBC_SOURCE = eglibc-$(GLIBC_VERSION).tar.bz2
 GLIBC_SRC_SUBDIR = libc
 else
-GLIBC_SITE = $(BR2_ENCLUSTRA_SITE)
+GLIBC_SITE = $(BR2_GNU_MIRROR)/libc
 GLIBC_SOURCE = glibc-$(GLIBC_VERSION).tar.xz
 GLIBC_SRC_SUBDIR = .
 endif
