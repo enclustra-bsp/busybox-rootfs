@@ -4,7 +4,6 @@
 #
 ################################################################################
 
-TZ_SOURCE =
 TZ_DEPENDENCIES = host-tzdata host-tzdump
 TZ_LICENSE = Public domain
 
@@ -14,7 +13,7 @@ define TZ_BUILD_CMDS
 	(cd $(HOST_DIR)/usr/share/zoneinfo/posix/;                 \
 		for i in $$(find . -type f); do                    \
 			mkdir -p $(@D)/output/$$(dirname $$i);         \
-			$(TZDUMP) -p . -q $${i#./} > $(@D)/output/$$i; \
+			$(TZDUMP) -p . -q $${i#./} | sed '1d' > $(@D)/output/$$i; \
 		done                                               \
 	)
 endef

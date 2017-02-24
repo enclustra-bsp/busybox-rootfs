@@ -17,7 +17,7 @@ NETSNMP_CONF_OPTS = \
 	--enable-mini-agent \
 	--without-rpm \
 	--with-logfile=none \
-	--without-kmem-usage $(DISABLE_IPV6) \
+	--without-kmem-usage \
 	--enable-as-needed \
 	--without-perl-modules \
 	--disable-embedded-perl \
@@ -49,7 +49,9 @@ endif
 ifeq ($(BR2_PACKAGE_OPENSSL),y)
 NETSNMP_DEPENDENCIES += openssl
 NETSNMP_CONF_OPTS += \
-	--with-openssl=$(STAGING_DIR)/usr/include/openssl
+	--with-openssl=$(STAGING_DIR)/usr/include/openssl \
+	--with-security-modules="tsm,usm" \
+	--with-transports="DTLSUDP,TLSTCP"
 ifeq ($(BR2_STATIC_LIBS),y)
 # openssl uses zlib, so we need to explicitly link with it when static
 NETSNMP_CONF_ENV += LIBS=-lz
@@ -58,6 +60,16 @@ else ifeq ($(BR2_PACKAGE_NETSNMP_OPENSSL_INTERNAL),y)
 NETSNMP_CONF_OPTS += --with-openssl=internal
 else
 NETSNMP_CONF_OPTS += --without-openssl
+endif
+
+# There's no option to forcibly enable or disable it
+ifeq ($(BR2_PACKAGE_PCIUTILS),y)
+NETSNMP_DEPENDENCIES += pciutils
+endif
+
+# For ucd-snmp/lmsensorsMib
+ifeq ($(BR2_PACKAGE_LM_SENSORS),y)
+NETSNMP_DEPENDENCIES += lm-sensors
 endif
 
 ifneq ($(BR2_PACKAGE_NETSNMP_ENABLE_MIBS),y)
@@ -79,15 +91,6 @@ ifeq ($(BR2_PACKAGE_NETSNMP_CLIENTS),y)
 NETSNMP_CONF_OPTS += --enable-applications
 else
 NETSNMP_CONF_OPTS += --disable-applications
-endif
-
-# Remove IPv6 MIBs if there's no IPv6
-ifneq ($(BR2_INET_IPV6),y)
-define NETSNMP_REMOVE_MIBS_IPV6
-	rm -f $(TARGET_DIR)/usr/share/snmp/mibs/IPV6*
-endef
-
-NETSNMP_POST_INSTALL_TARGET_HOOKS += NETSNMP_REMOVE_MIBS_IPV6
 endif
 
 define NETSNMP_REMOVE_BLOAT_MIBS

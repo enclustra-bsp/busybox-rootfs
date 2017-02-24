@@ -4,18 +4,17 @@
 #
 ################################################################################
 
-HOSTAPD_VERSION = 2.4
+HOSTAPD_VERSION = 2.6
 HOSTAPD_SITE = http://hostap.epitest.fi/releases
 HOSTAPD_SUBDIR = hostapd
 HOSTAPD_CONFIG = $(HOSTAPD_DIR)/$(HOSTAPD_SUBDIR)/.config
 HOSTAPD_DEPENDENCIES = host-pkgconf libnl
 HOSTAPD_CFLAGS = $(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include/libnl3/
-HOSTAPD_LICENSE = GPLv2/BSD-3c
+HOSTAPD_LICENSE = BSD-3c
 HOSTAPD_LICENSE_FILES = README
 HOSTAPD_CONFIG_SET =
 
 HOSTAPD_CONFIG_ENABLE = \
-	CONFIG_ACS \
 	CONFIG_FULL_DYNAMIC_VLAN \
 	CONFIG_HS20 \
 	CONFIG_IEEE80211AC \
@@ -35,10 +34,6 @@ ifeq ($(BR2_STATIC_LIBS),y)
 HOSTAPD_LIBS += -lnl-3 -lm -lpthread
 endif
 
-ifeq ($(BR2_INET_IPV6),)
-HOSTAPD_CONFIG_DISABLE += CONFIG_IPV6
-endif
-
 # Try to use openssl if it's already available
 ifeq ($(BR2_PACKAGE_OPENSSL),y)
 HOSTAPD_DEPENDENCIES += openssl
@@ -47,6 +42,10 @@ HOSTAPD_CONFIG_EDITS += 's/\#\(CONFIG_TLS=openssl\)/\1/'
 else
 HOSTAPD_CONFIG_DISABLE += CONFIG_EAP_PWD
 HOSTAPD_CONFIG_EDITS += 's/\#\(CONFIG_TLS=\).*/\1internal/'
+endif
+
+ifeq ($(BR2_PACKAGE_HOSTAPD_ACS),y)
+HOSTAPD_CONFIG_ENABLE += CONFIG_ACS
 endif
 
 ifeq ($(BR2_PACKAGE_HOSTAPD_EAP),y)
@@ -87,6 +86,8 @@ define HOSTAPD_INSTALL_TARGET_CMDS
 		$(TARGET_DIR)/usr/sbin/hostapd
 	$(INSTALL) -m 0755 -D $(@D)/$(HOSTAPD_SUBDIR)/hostapd_cli \
 		$(TARGET_DIR)/usr/bin/hostapd_cli
+	$(INSTALL) -m 0644 -D $(@D)/$(HOSTAPD_SUBDIR)/hostapd.conf \
+		$(TARGET_DIR)/etc/hostapd.conf
 endef
 
 $(eval $(generic-package))

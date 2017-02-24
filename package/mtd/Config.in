@@ -62,15 +62,17 @@ config BR2_PACKAGE_MTD_MKFSUBIFS
 	select BR2_PACKAGE_LZO
 	select BR2_PACKAGE_UTIL_LINUX
 	select BR2_PACKAGE_UTIL_LINUX_LIBUUID
-	depends on BR2_LARGEFILE # util-linux
 	depends on BR2_USE_WCHAR # util-linux
 
-comment "mkfs.ubifs needs a toolchain w/ largefile, wchar"
-	depends on !BR2_LARGEFILE || !BR2_USE_WCHAR
+comment "mkfs.ubifs needs a toolchain w/ wchar"
+	depends on !BR2_USE_WCHAR
 
 config BR2_PACKAGE_MTD_MTD_DEBUG
 	bool "mtd_debug"
 	default y
+
+config BR2_PACKAGE_MTD_MTDPART
+	bool "mtdpart"
 
 config BR2_PACKAGE_MTD_NANDDUMP
 	bool "nanddump"
@@ -91,11 +93,7 @@ config BR2_PACKAGE_MTD_NFTL_FORMAT
 	bool "nftl_format"
 
 config BR2_PACKAGE_MTD_RECV_IMAGE
-	depends on BR2_INET_IPV6
 	bool "recv_image"
-
-comment "recv_image needs a toolchain w/ IPv6"
-	depends on !BR2_INET_IPV6
 
 config BR2_PACKAGE_MTD_RFDDUMP
 	bool "rfddump"
@@ -160,5 +158,11 @@ config BR2_PACKAGE_MTD_UBIUPDATEVOL
 config BR2_PACKAGE_MTD_UBIBLOCK
 	bool "ubiblock"
 	default y
+
+config BR2_PACKAGE_MTD_INTEGCK
+	bool "integck"
+	depends on BR2_USE_MMU # fork()
+	help
+	  Install the integck test program.
 
 endif

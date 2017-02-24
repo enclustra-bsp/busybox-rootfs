@@ -1,2 +1,4 @@
-# Locally calculated
-sha256	29bb08abfc3d392b2f0c3e7f48ec46dd09ab1023f9a5575fc2a93546f4ca5145	redis-2.8.19.tar.gz
+# From https://github.com/antirez/redis-hashes/blob/master/README
+sha1	6f6333db6111badaa74519d743589ac4635eba7a 	redis-3.2.5.tar.gz
+# Calculated based on the hash above
+sha256	8509ceb1efd849d6b2346a72a8e926b5a4f6ed3cc7c3cd8d9f36b2e9ba085315	redis-3.2.5.tar.gz

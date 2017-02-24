@@ -11,8 +11,8 @@
 # either version 2.1 of the License, or (at your option) any
 # later version.
 
-AVAHI_VERSION = 0.6.31
-AVAHI_SITE = http://www.avahi.org/download
+AVAHI_VERSION = 0.6.32
+AVAHI_SITE = https://github.com/lathiat/avahi/releases/download/v$(AVAHI_VERSION)
 AVAHI_LICENSE = LGPLv2.1+
 AVAHI_LICENSE_FILES = LICENSE
 AVAHI_INSTALL_STAGING = YES
@@ -68,9 +68,21 @@ AVAHI_CONF_ENV = \
 	avahi_cv_sys_cxx_works=yes \
 	DATADIRNAME=share
 
+# Note: even if we have Gtk2 and Gtk3 support in Buildroot, we
+# explicitly disable support for them, in order to avoid the following
+# circular dependencies:
+#
+#  avahi -> libglade -> libgtk2 -> cups -> avahi
+#  avahi -> libgtk3 -> cups -> avahi
+#
+# Since Gtk2 and Gtk3 in Avahi are only used for some example/demo
+# programs, we decided to disable their support to solve the circular
+# dependency.
 AVAHI_CONF_OPTS = \
 	--disable-qt3 \
 	--disable-qt4 \
+	--disable-gtk \
+	--disable-gtk3 \
 	--disable-gdbm \
 	--disable-pygtk \
 	--disable-mono \
@@ -88,10 +100,23 @@ AVAHI_DEPENDENCIES = \
 	$(if $(BR2_NEEDS_GETTEXT_IF_LOCALE),gettext) host-intltool \
 	host-pkgconf host-gettext
 
+AVAHI_CFLAGS = $(TARGET_CFLAGS)
+
+ifeq ($(BR2_PACKAGE_SYSTEMD),y)
+AVAHI_CONF_OPTS += --with-systemdsystemunitdir=/usr/lib/systemd/system
+else
+AVAHI_CONF_OPTS += --with-systemdsystemunitdir=no
+AVAHI_CFLAGS += -DDISABLE_SYSTEMD
+endif
+
 ifneq ($(BR2_PACKAGE_AVAHI_DAEMON)$(BR2_PACKAGE_AVAHI_AUTOIPD),)
 AVAHI_DEPENDENCIES += libdaemon
 else
 AVAHI_CONF_OPTS += --disable-libdaemon
+endif
+
+ifeq ($(BR2_PACKAGE_LIBCAP),y)
+AVAHI_DEPENDENCIES += libcap
 endif
 
 ifeq ($(BR2_PACKAGE_AVAHI_DAEMON),y)
@@ -117,19 +142,6 @@ else
 AVAHI_CONF_OPTS += --disable-glib --disable-gobject
 endif
 
-ifeq ($(BR2_PACKAGE_LIBGLADE),y)
-AVAHI_DEPENDENCIES += libglade
-else
-AVAHI_CONF_OPTS += --disable-gtk
-endif
-
-ifeq ($(BR2_PACKAGE_LIBGTK3),y)
-AVAHI_DEPENDENCIES += libgtk3
-AVAHI_CONF_OPTS += --enable-gtk3
-else
-AVAHI_CONF_OPTS += --disable-gtk3
-endif
-
 ifeq ($(BR2_PACKAGE_PYTHON),y)
 AVAHI_CONF_ENV += \
 	am_cv_pathless_PYTHON=python \
@@ -153,6 +165,8 @@ AVAHI_DEPENDENCIES += dbus-python
 else
 AVAHI_CONF_OPTS += --disable-python-dbus
 endif
+
+AVAHI_CONF_ENV += CFLAGS="$(AVAHI_CFLAGS)"
 
 AVAHI_MAKE_OPTS += $(if $(BR2_NEEDS_GETTEXT_IF_LOCALE),LIBS=-lintl)
 
@@ -185,10 +199,10 @@ ifeq ($(BR2_PACKAGE_AVAHI_DAEMON),y)
 define AVAHI_INSTALL_INIT_SYSTEMD
 	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
 
-	ln -fs /lib/systemd/system/avahi-daemon.service \
+	ln -fs ../../../../usr/lib/systemd/system/avahi-daemon.service \
 		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/avahi-daemon.service
 
-	ln -fs /lib/systemd/system/avahi-dnsconfd.service \
+	ln -fs ../../../../usr/lib/systemd/system/avahi-dnsconfd.service \
 		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/avahi-dnsconfd.service
 
 	$(INSTALL) -D -m 644 package/avahi/avahi_tmpfiles.conf \
@@ -206,13 +220,13 @@ define AVAHI_INSTALL_INIT_SYSV
 	$(AVAHI_INSTALL_DAEMON_INIT_SYSV)
 endef
 
+ifeq ($(BR2_PACKAGE_AVAHI_LIBDNSSD_COMPATIBILITY),y)
 # applications expects to be able to #include <dns_sd.h>
 define AVAHI_STAGING_INSTALL_LIBDNSSD_LINK
 	ln -sf avahi-compat-libdns_sd/dns_sd.h \
 		$(STAGING_DIR)/usr/include/dns_sd.h
 endef
 
-ifeq ($(BR2_PACKAGE_AVAHI_LIBDNSSD_COMPATIBILITY),y)
 AVAHI_POST_INSTALL_STAGING_HOOKS += AVAHI_STAGING_INSTALL_LIBDNSSD_LINK
 endif
 

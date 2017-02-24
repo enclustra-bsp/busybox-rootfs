@@ -1,11 +1,6 @@
-comment "quagga needs a toolchain w/ IPv6"
-	depends on BR2_USE_MMU
-	depends on !BR2_INET_IPV6
-
 config BR2_PACKAGE_QUAGGA
 	bool "quagga"
 	depends on BR2_USE_MMU # fork()
-	depends on BR2_INET_IPV6
 	help
 	  Routing software suite, providing implementations of
 	  OSPFv2, OSPFv3 (IPv6), RIP v1 and v2, RIPng (IPv6) and BGPv4+.
@@ -29,15 +24,10 @@ config BR2_PACKAGE_QUAGGA_TCP_ZEBRA
 	  You'll want this enabled if zebra and the protocol daemon(s) run
 	  on different hosts.
 
-config BR2_PACKAGE_QUAGGA_BABELD
-	bool "BABEL protocol"
-	help
-	  Build babeld daemon.
-
 config BR2_PACKAGE_QUAGGA_BGPD
-	bool "BPGv4+ protocol"
+	bool "BGPv4+ protocol"
 	help
-	  Build bpgd daemon.
+	  Build bgpd daemon.
 
 config BR2_PACKAGE_QUAGGA_BGP_ANNOUNCE
 	bool "BGP route announcement"
@@ -52,10 +42,6 @@ config BR2_PACKAGE_QUAGGA_OSPFD
 	bool "OSPFv2 protocol"
 	help
 	  Build ospfd daemon.
-
-config BR2_PACKAGE_QUAGGA_OPAQUE_LSA
-	bool "OSPF Opaque-LSA with OSPFAPI support (RFC2370)"
-	depends on BR2_PACKAGE_QUAGGA_OSPFD
 
 config BR2_PACKAGE_QUAGGA_OSPF6D
 	bool "OSPFv3 (IPv6) protocol"

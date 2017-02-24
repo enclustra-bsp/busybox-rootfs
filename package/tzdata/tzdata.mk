@@ -4,16 +4,19 @@
 #
 ################################################################################
 
-TZDATA_VERSION = 2015a
+TZDATA_VERSION = 2016f
 TZDATA_SOURCE = tzdata$(TZDATA_VERSION).tar.gz
-TZDATA_SITE = ftp://ftp.iana.org/tz/releases
+TZDATA_SITE = http://www.iana.org/time-zones/repository/releases
+TZDATA_STRIP_COMPONENTS = 0
 TZDATA_DEPENDENCIES = host-tzdata
 HOST_TZDATA_DEPENDENCIES = host-zic
 TZDATA_LICENSE = Public domain
 
+# Take care when re-ordering this list since this might break zone
+# dependencies
 TZDATA_DEFAULT_ZONELIST = \
-	africa antarctica asia australasia backward etcetera \
-	europe factory northamerica pacificnew southamerica
+	africa antarctica asia australasia europe northamerica \
+	southamerica pacificnew etcetera backward systemv factory
 
 ifeq ($(call qstrip,$(BR2_TARGET_TZ_ZONELIST)),default)
 TZDATA_ZONELIST = $(TZDATA_DEFAULT_ZONELIST)
@@ -45,16 +48,11 @@ define TZDATA_INSTALL_TARGET_CMDS
 	fi
 endef
 
-define HOST_TZDATA_EXTRACT_CMDS
-	gzip -d -c $(DL_DIR)/$(TZDATA_SOURCE) \
-		| $(TAR) --strip-components=0 -C $(@D) -xf -
-endef
-
 define HOST_TZDATA_BUILD_CMDS
 	(cd $(@D); \
 		for zone in $(TZDATA_ZONELIST); do \
-			$(ZIC) -d _output/posix -y yearistype.sh $$zone; \
-			$(ZIC) -d _output/right -L leapseconds -y yearistype.sh $$zone; \
+			$(ZIC) -d _output/posix -y yearistype.sh $$zone || exit 1; \
+			$(ZIC) -d _output/right -L leapseconds -y yearistype.sh $$zone || exit 1; \
 		done; \
 	)
 endef

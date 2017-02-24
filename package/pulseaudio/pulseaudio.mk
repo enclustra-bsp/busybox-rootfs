@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-PULSEAUDIO_VERSION = 5.0
+PULSEAUDIO_VERSION = 9.0
 PULSEAUDIO_SOURCE = pulseaudio-$(PULSEAUDIO_VERSION).tar.xz
 PULSEAUDIO_SITE = http://freedesktop.org/software/pulseaudio/releases
 PULSEAUDIO_INSTALL_STAGING = YES
@@ -12,25 +12,43 @@ PULSEAUDIO_LICENSE = LGPLv2.1+ (specific license for modules, see LICENSE file)
 PULSEAUDIO_LICENSE_FILES = LICENSE GPL LGPL
 PULSEAUDIO_CONF_OPTS = \
 	--disable-default-build-tests \
-	--disable-legacy-runtime-dir \
 	--disable-legacy-database-entry-format \
 	--disable-manpages
 
+# Make sure we don't detect libatomic_ops. Indeed, since pulseaudio
+# requires json-c, which needs 4 bytes __sync builtins, there should
+# be no need for pulseaudio to rely on libatomic_ops.
+PULSEAUDIO_CONF_ENV += \
+	ac_cv_header_atomic_ops_h=no
+
+# 0002-webrtc-C-11-is-only-required-for-WebRTC-support.patch
+PULSEAUDIO_AUTORECONF = YES
+
 PULSEAUDIO_DEPENDENCIES = \
 	host-pkgconf libtool json-c libsndfile speex host-intltool \
-	$(if $(BR2_PACKAGE_LIBATOMIC_OPS),libatomic_ops) \
 	$(if $(BR2_PACKAGE_LIBSAMPLERATE),libsamplerate) \
 	$(if $(BR2_PACKAGE_ALSA_LIB),alsa-lib) \
 	$(if $(BR2_PACKAGE_LIBGLIB2),libglib2) \
 	$(if $(BR2_PACKAGE_AVAHI_DAEMON),avahi) \
 	$(if $(BR2_PACKAGE_DBUS),dbus) \
 	$(if $(BR2_PACKAGE_BLUEZ_UTILS),bluez_utils) \
-	$(if $(BR2_PACKAGE_HAS_UDEV),udev) \
 	$(if $(BR2_PACKAGE_OPENSSL),openssl) \
 	$(if $(BR2_PACKAGE_FFTW),fftw) \
-	$(if $(BR2_PACKAGE_WEBRTC_AUDIO_PROCESSING),webrtc-audio-processing) \
 	$(if $(BR2_PACKAGE_SYSTEMD),systemd)
 
+ifeq ($(BR2_PACKAGE_GDBM),y)
+PULSEAUDIO_CONF_OPTS += --with-database=gdbm
+PULSEAUDIO_DEPENDENCIES += gdbm
+else
+PULSEAUDIO_CONF_OPTS += --with-database=simple
+endif
+
+ifeq ($(BR2_PACKAGE_JACK2),y)
+PULSEAUDIO_CONF_OPTS += --enable-jack
+PULSEAUDIO_DEPENDENCIES += jack2
+else
+PULSEAUDIO_CONF_OPTS += --disable-jack
+endif
 
 ifeq ($(BR2_PACKAGE_ORC),y)
 PULSEAUDIO_DEPENDENCIES += orc
@@ -55,19 +73,25 @@ else
 PULSEAUDIO_CONF_OPTS += --disable-gtk3
 endif
 
-ifneq ($(BR2_INSTALL_LIBSTDCPP),y)
-# The optional webrtc echo canceller is written in C++, causing auto* to want
-# to link module-echo-cancel.so with CXX even if webrtc ISN'T used.
-# If we don't have C++ support enabled in BR, CXX will point to /bin/false,
-# which makes configure think we aren't able to create C++ .so files
-# (arguable true), breaking the build when it tries to install the .so
-# workaround it by patching up the libtool invocations to use C mode instead
-define PULSEAUDIO_FORCE_CC
-	$(SED) 's/--tag=CXX/--tag=CC/g' -e 's/(CXXLD)/(CCLD)/g' \
-		$(@D)/src/Makefile.in
-endef
+ifeq ($(BR2_PACKAGE_LIBSOXR),y)
+PULSEAUDIO_CONF_OPTS += --with-soxr
+PULSEAUDIO_DEPENDENCIES += libsoxr
+else
+PULSEAUDIO_CONF_OPTS += --without-soxr
+endif
 
-PULSEAUDIO_POST_PATCH_HOOKS += PULSEAUDIO_FORCE_CC
+ifeq ($(BR2_PACKAGE_HAS_UDEV),y)
+PULSEAUDIO_CONF_OPTS += --enable-udev
+PULSEAUDIO_DEPENDENCIES += udev
+else
+PULSEAUDIO_CONF_OPTS += --disable-udev
+endif
+
+ifeq ($(BR2_PACKAGE_WEBRTC_AUDIO_PROCESSING),y)
+PULSEAUDIO_CONF_OPTS += --enable-webrtc-aec
+PULSEAUDIO_DEPENDENCIES += webrtc-audio-processing
+else
+PULSEAUDIO_CONF_OPTS += --disable-webrtc-aec
 endif
 
 # neon intrinsics not available with float-abi=soft
@@ -121,6 +145,14 @@ endef
 define PULSEAUDIO_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 755 package/pulseaudio/S50pulseaudio \
 		$(TARGET_DIR)/etc/init.d/S50pulseaudio
+endef
+
+define PULSEAUDIO_INSTALL_INIT_SYSTEMD
+	$(INSTALL) -D -m 644 package/pulseaudio/pulseaudio.service \
+		$(TARGET_DIR)/usr/lib/systemd/system/pulseaudio.service
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -sf ../../../../usr/lib/systemd/system/pulseaudio.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/pulseaudio.service
 endef
 
 endif

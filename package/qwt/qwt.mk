@@ -4,11 +4,17 @@
 #
 ################################################################################
 
-QWT_VERSION = 6.1.0
+QWT_VERSION = 6.1.3
 QWT_SOURCE = qwt-$(QWT_VERSION).tar.bz2
 QWT_SITE = http://downloads.sourceforge.net/project/qwt/qwt/$(QWT_VERSION)
 QWT_INSTALL_STAGING = YES
+ifeq ($(BR2_PACKAGE_QT),y)
 QWT_DEPENDENCIES = qt
+QWT_QMAKE = $(QT_QMAKE)
+else ifeq ($(BR2_PACKAGE_QT5),y)
+QWT_DEPENDENCIES += qt5base
+QWT_QMAKE = $(QT5_QMAKE)
+endif
 
 QWT_LICENSE = LGPLv2.1 with exceptions
 QWT_LICENSE_FILES = COPYING
@@ -37,7 +43,7 @@ endif
 
 define QWT_CONFIGURE_CMDS
 	$(SED) $(QWT_CONFIG) $(@D)/qwtconfig.pri
-	(cd $(@D); $(TARGET_MAKE_ENV) $(QT_QMAKE))
+	(cd $(@D); $(TARGET_MAKE_ENV) $(QWT_QMAKE))
 endef
 
 define QWT_BUILD_CMDS
@@ -48,13 +54,13 @@ endef
 # that when building with qmake, -L$(STAGING_DIR)/usr/lib is used and
 # not -L/usr/lib.
 define QWT_INSTALL_STAGING_CMDS
-	$(MAKE) -C $(@D) install INSTALL_ROOT=$(STAGING_DIR)
+	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) install INSTALL_ROOT=$(STAGING_DIR)
 	$(SED) "s%QWT_INSTALL_PREFIX = .*%QWT_INSTALL_PREFIX = $(STAGING_DIR)/usr%" \
 		$(STAGING_DIR)/usr/mkspecs/features/qwtconfig.pri
 endef
 
 define QWT_INSTALL_TARGET_CMDS
-	$(MAKE) -C $(@D) install INSTALL_ROOT=$(TARGET_DIR)
+	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) install INSTALL_ROOT=$(TARGET_DIR)
 	rm -Rf $(TARGET_DIR)/usr/mkspecs
 endef
 

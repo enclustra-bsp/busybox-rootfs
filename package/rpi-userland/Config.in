@@ -2,8 +2,8 @@ config BR2_PACKAGE_RPI_USERLAND
 	bool "rpi-userland"
 	depends on BR2_arm
 	depends on BR2_INSTALL_LIBSTDCPP
-	depends on BR2_LARGEFILE
 	depends on BR2_TOOLCHAIN_HAS_THREADS
+	depends on !BR2_STATIC_LIBS
 	select BR2_PACKAGE_HAS_LIBEGL
 	select BR2_PACKAGE_HAS_LIBGLES
 	select BR2_PACKAGE_HAS_LIBOPENVG
@@ -38,8 +38,14 @@ config BR2_PACKAGE_RPI_USERLAND_START_VCFILED
 	  vcfiled is a daemon serving files to VideoCore from the host file
 	  system.
 
+config BR2_PACKAGE_RPI_USERLAND_HELLO
+	bool "hello_pi examples"
+	help
+	  Install the hello-pi examples to test the HW (GPU, camera...)
+
 endif
 
-comment "rpi-userland needs a toolchain w/ C++, largefile, threads"
+comment "rpi-userland needs a toolchain w/ C++, threads, dynamic library"
 	depends on BR2_arm
-	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_LARGEFILE || !BR2_TOOLCHAIN_HAS_THREADS
+	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_TOOLCHAIN_HAS_THREADS || \
+		BR2_STATIC_LIBS

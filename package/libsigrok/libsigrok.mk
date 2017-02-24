@@ -4,22 +4,13 @@
 #
 ################################################################################
 
-LIBSIGROK_VERSION = 380ee96fdfe0895ca0aa0b158d5c332ef08f8b3c
-# No https access on upstream git
-LIBSIGROK_SITE = git://sigrok.org/libsigrok
+LIBSIGROK_VERSION = 0.4.0
+LIBSIGROK_SITE = http://sigrok.org/download/source/libsigrok
 LIBSIGROK_LICENSE = GPLv3+
 LIBSIGROK_LICENSE_FILES = COPYING
-# Git checkout has no configure script
-LIBSIGROK_AUTORECONF = YES
 LIBSIGROK_INSTALL_STAGING = YES
 LIBSIGROK_DEPENDENCIES = libglib2 libzip host-pkgconf
 LIBSIGROK_CONF_OPTS = --disable-glibtest --disable-java --disable-python
-
-define LIBSIGROK_ADD_MISSING
-	mkdir -p $(@D)/autostuff
-endef
-
-LIBSIGROK_PRE_CONFIGURE_HOOKS += LIBSIGROK_ADD_MISSING
 
 ifeq ($(BR2_PACKAGE_LIBSERIALPORT),y)
 LIBSIGROK_CONF_OPTS += --enable-libserialport
@@ -48,7 +39,12 @@ endif
 
 ifeq ($(BR2_PACKAGE_LIBSIGROKCXX),y)
 LIBSIGROK_CONF_OPTS += --enable-cxx
-LIBSIGROK_DEPENDENCIES += host-autoconf-archive glibmm
+LIBSIGROK_AUTORECONF_OPTS += -I $(HOST_DIR)/usr/share/autoconf-archive
+LIBSIGROK_DEPENDENCIES += \
+	host-autoconf-archive \
+	glibmm \
+	host-doxygen \
+	$(if $(BR2_PACKAGE_PYTHON3),host-python3,host-python)
 else
 LIBSIGROK_CONF_OPTS += --disable-cxx
 endif

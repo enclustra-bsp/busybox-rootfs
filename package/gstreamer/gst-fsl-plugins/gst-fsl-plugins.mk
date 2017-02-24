@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-GST_FSL_PLUGINS_VERSION = 3.0.11
+GST_FSL_PLUGINS_VERSION = 4.0.3
 GST_FSL_PLUGINS_SITE = $(FREESCALE_IMX_SITE)
 
 # Most is LGPLv2+, but some sources are copied from upstream and are
@@ -16,7 +16,11 @@ GST_FSL_PLUGINS_INSTALL_STAGING = YES
 GST_FSL_PLUGINS_AUTORECONF = YES
 
 GST_FSL_PLUGINS_DEPENDENCIES += host-pkgconf gstreamer gst-plugins-base \
-	libfslvpuwrap imx-lib imx-vpu libfslparser libfslcodec
+	imx-lib imx-parser imx-codec
+
+ifeq ($(BR2_PACKAGE_FREESCALE_IMX_HAS_VPU),y)
+GST_FSL_PLUGINS_DEPENDENCIES += imx-vpuwrap
+endif
 
 GST_FSL_PLUGINS_CONF_ENV = \
 	PLATFORM=$(BR2_PACKAGE_GST_FSL_PLUGINS_PLATFORM) \

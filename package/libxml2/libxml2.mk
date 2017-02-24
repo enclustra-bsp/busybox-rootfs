@@ -4,16 +4,16 @@
 #
 ################################################################################
 
-LIBXML2_VERSION = 2.9.2
+LIBXML2_VERSION = 2.9.4
 LIBXML2_SITE = ftp://xmlsoft.org/libxml2
 LIBXML2_INSTALL_STAGING = YES
-LIBXML2_AUTORECONF = YES
 LIBXML2_LICENSE = MIT
 LIBXML2_LICENSE_FILES = COPYING
 LIBXML2_CONFIG_SCRIPTS = xml2-config
 
-ifneq ($(BR2_LARGEFILE),y)
-LIBXML2_CONF_ENV = CC="$(TARGET_CC) $(TARGET_CFLAGS) -DNO_LARGEFILE_SOURCE"
+# relocation truncated to fit: R_68K_GOT16O
+ifeq ($(BR2_m68k_cf),y)
+LIBXML2_CONF_ENV += CFLAGS="$(TARGET_CFLAGS) -mxgot"
 endif
 
 LIBXML2_CONF_OPTS = --with-gnu-ld --without-python --without-debug

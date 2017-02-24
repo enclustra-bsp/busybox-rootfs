@@ -2,9 +2,7 @@ config BR2_PACKAGE_SUNXI_MALI
 	bool "sunxi-mali"
 	select BR2_PACKAGE_HAS_LIBEGL
 	select BR2_PACKAGE_HAS_LIBGLES
-	# The egl/gles mali libraries are provided as a git submodule of the
-	# sunxi-mali repo and are downloaded by the sunxi-mali-prop package.
-	select BR2_PACKAGE_SUNXI_MALI_PROP
+	select BR2_PACKAGE_LIBUMP
 	depends on BR2_TOOLCHAIN_USES_GLIBC
 	depends on BR2_arm
 	help
@@ -34,7 +32,7 @@ choice
 	prompt "Version"
 	default BR2_PACKAGE_SUNXI_MALI_R3P0
 	help
-	  Select the version of the kernel module.  For the sunxi-kernel, the
+	  Select the version of the kernel module. For the sunxi-kernel, the
 	  appropriate version number is r3p0. For other kernels, use the maliver
 	  application to determine the appropriate version.
 
@@ -63,6 +61,6 @@ endchoice
 
 endif
 
-comment "sunxi-mali needs an (e)glibc toolchain"
+comment "sunxi-mali needs a glibc toolchain"
 	depends on BR2_arm
 	depends on !BR2_TOOLCHAIN_USES_GLIBC

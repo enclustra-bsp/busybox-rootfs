@@ -5,12 +5,15 @@
 ################################################################################
 
 DOVECOT_VERSION_MAJOR = 2.2
-DOVECOT_VERSION = $(DOVECOT_VERSION_MAJOR).16
+DOVECOT_VERSION = $(DOVECOT_VERSION_MAJOR).27
 DOVECOT_SITE = http://www.dovecot.org/releases/$(DOVECOT_VERSION_MAJOR)
 DOVECOT_INSTALL_STAGING = YES
 DOVECOT_LICENSE = LGPLv2.1
 DOVECOT_LICENSE_FILES = COPYING COPYING.LGPL COPYING.MIT
-DOVECOT_DEPENDENCIES = host-pkgconf $(if $(BR2_PACKAGE_LIBICONV),libiconv)
+DOVECOT_DEPENDENCIES = \
+	host-pkgconf \
+	$(if $(BR2_PACKAGE_LIBICONV),libiconv) \
+	openssl
 
 DOVECOT_CONF_ENV = \
 	RPCGEN=__disable_RPCGEN_rquota \
@@ -27,17 +30,24 @@ DOVECOT_CONF_ENV = \
 	lib_cv___va_copy=yes \
 	lib_cv_va_val_copy=yes
 
-DOVECOT_CONF_OPTS = --without-docs
+DOVECOT_CONF_OPTS = --without-docs --with-ssl=openssl
 
 ifeq ($(BR2_PACKAGE_DOVECOT_MYSQL)$(BR2_PACKAGE_DOVECOT_SQLITE),)
 DOVECOT_CONF_OPTS += --without-sql
 endif
 
-ifeq ($(BR2_PACKAGE_DOVECOT_BZIP2),y)
+ifeq ($(BR2_PACKAGE_BZIP2),y)
 DOVECOT_CONF_OPTS += --with-bzlib
 DOVECOT_DEPENDENCIES += bzip2
 else
 DOVECOT_CONF_OPTS += --without-bzlib
+endif
+
+ifeq ($(BR2_PACKAGE_ICU),y)
+DOVECOT_CONF_OPTS += --with-icu
+DOVECOT_DEPENDENCIES += icu
+else
+DOVECOT_CONF_OPTS += --without-icu
 endif
 
 ifeq ($(BR2_PACKAGE_LIBCAP),y)
@@ -55,13 +65,6 @@ else
 DOVECOT_CONF_OPTS += --without-mysql
 endif
 
-ifeq ($(BR2_PACKAGE_DOVECOT_OPENSSL),y)
-DOVECOT_CONF_OPTS += --with-ssl=openssl
-DOVECOT_DEPENDENCIES += openssl
-else
-DOVECOT_CONF_OPTS += --with-ssl=no
-endif
-
 ifeq ($(BR2_PACKAGE_DOVECOT_SQLITE),y)
 DOVECOT_CONF_OPTS += --with-sqlite
 DOVECOT_DEPENDENCIES += sqlite
@@ -69,7 +72,21 @@ else
 DOVECOT_CONF_OPTS += --without-sqlite
 endif
 
-ifeq ($(BR2_PACKAGE_DOVECOT_ZLIB),y)
+ifeq ($(BR2_PACKAGE_LZ4),y)
+DOVECOT_CONF_OPTS += --with-lz4
+DOVECOT_DEPENDENCIES += lz4
+else
+DOVECOT_CONF_OPTS += --without-lz4
+endif
+
+ifeq ($(BR2_PACKAGE_XZ),y)
+DOVECOT_CONF_OPTS += --with-lzma
+DOVECOT_DEPENDENCIES += xz
+else
+DOVECOT_CONF_OPTS += --without-lzma
+endif
+
+ifeq ($(BR2_PACKAGE_ZLIB),y)
 DOVECOT_CONF_OPTS += --with-zlib
 DOVECOT_DEPENDENCIES += zlib
 else

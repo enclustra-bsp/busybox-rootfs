@@ -13,6 +13,10 @@ config BR2_X86_CPU_HAS_SSE4
 	bool
 config BR2_X86_CPU_HAS_SSE42
 	bool
+config BR2_X86_CPU_HAS_AVX
+	bool
+config BR2_X86_CPU_HAS_AVX2
+	bool
 
 choice
 	prompt "Target Architecture Variant"
@@ -21,15 +25,23 @@ choice
 	help
 	  Specific CPU variant to use
 
-config BR2_x86_i386
-	bool "i386"
-	depends on !BR2_x86_64
 config BR2_x86_i486
 	bool "i486"
 	depends on !BR2_x86_64
 config BR2_x86_i586
 	bool "i586"
 	depends on !BR2_x86_64
+config BR2_x86_x1000
+	bool "x1000"
+	depends on !BR2_x86_64
+	help
+	  The Intel X1000 is a Pentium class microprocessor in the
+	  Quark (sub-Atom) Product Line. The X1000 has a bug on the
+	  lock prefix requiring that prefix must be stripped at build
+	  time.
+
+	  See https://en.wikipedia.org/wiki/Intel_Quark
+
 config BR2_x86_i686
 	bool "i686"
 	depends on !BR2_x86_64
@@ -89,6 +101,27 @@ config BR2_x86_corei7
 	select BR2_X86_CPU_HAS_SSSE3
 	select BR2_X86_CPU_HAS_SSE4
 	select BR2_X86_CPU_HAS_SSE42
+config BR2_x86_corei7_avx
+	bool "corei7-avx"
+	select BR2_X86_CPU_HAS_MMX
+	select BR2_X86_CPU_HAS_SSE
+	select BR2_X86_CPU_HAS_SSE2
+	select BR2_X86_CPU_HAS_SSE3
+	select BR2_X86_CPU_HAS_SSSE3
+	select BR2_X86_CPU_HAS_SSE4
+	select BR2_X86_CPU_HAS_SSE42
+	select BR2_X86_CPU_HAS_AVX
+config BR2_x86_core_avx2
+	bool "core-avx2"
+	select BR2_X86_CPU_HAS_MMX
+	select BR2_X86_CPU_HAS_SSE
+	select BR2_X86_CPU_HAS_SSE2
+	select BR2_X86_CPU_HAS_SSE3
+	select BR2_X86_CPU_HAS_SSSE3
+	select BR2_X86_CPU_HAS_SSE4
+	select BR2_X86_CPU_HAS_SSE42
+	select BR2_X86_CPU_HAS_AVX
+	select BR2_X86_CPU_HAS_AVX2
 config BR2_x86_atom
 	bool "atom"
 	select BR2_X86_CPU_HAS_MMX
@@ -174,9 +207,9 @@ config BR2_x86_winchip2
 endchoice
 
 config BR2_ARCH
-	default "i386"		if BR2_x86_i386
 	default "i486"		if BR2_x86_i486
 	default "i586"		if BR2_x86_i586
+	default "i586"		if BR2_x86_x1000
 	default "i586"		if BR2_x86_pentium_mmx
 	default "i586"		if BR2_x86_geode
 	default "i586"		if BR2_x86_c3
@@ -193,6 +226,8 @@ config BR2_ARCH
 	default "i686"		if BR2_x86_nocona && BR2_i386
 	default "i686"		if BR2_x86_core2 && BR2_i386
 	default "i686"		if BR2_x86_corei7 && BR2_i386
+	default "i686"		if BR2_x86_corei7_avx && BR2_i386
+	default "i686"		if BR2_x86_corei7_avx2 && BR2_i386
 	default "i686"		if BR2_x86_atom && BR2_i386
 	default "i686"		if BR2_x86_opteron && BR2_i386
 	default "i686"		if BR2_x86_opteron_sse3 && BR2_i386
@@ -208,13 +243,10 @@ config BR2_ARCH
 config BR2_ENDIAN
 	default "LITTLE"
 
-config BR2_ARCH_HAS_ATOMICS
-	default y if !BR2_x86_i386
-
 config BR2_GCC_TARGET_ARCH
-	default "i386"		if BR2_x86_i386
 	default "i486"		if BR2_x86_i486
 	default "i586"		if BR2_x86_i586
+	default "i586"		if BR2_x86_x1000
 	default "pentium-mmx"	if BR2_x86_pentium_mmx
 	default "i686"		if BR2_x86_i686
 	default "pentiumpro"	if BR2_x86_pentiumpro
@@ -226,6 +258,8 @@ config BR2_GCC_TARGET_ARCH
 	default "nocona"	if BR2_x86_nocona
 	default "core2"		if BR2_x86_core2
 	default "corei7"	if BR2_x86_corei7
+	default "corei7-avx"	if BR2_x86_corei7_avx
+	default "core-avx2"	if BR2_x86_core_avx2
 	default "atom"		if BR2_x86_atom
 	default "k8"		if BR2_x86_opteron
 	default "k8-sse3"	if BR2_x86_opteron_sse3

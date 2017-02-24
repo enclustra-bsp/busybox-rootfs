@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-WEBP_VERSION = 0.3.1
+WEBP_VERSION = 0.4.3
 WEBP_SOURCE = libwebp-$(WEBP_VERSION).tar.gz
-WEBP_SITE = https://webp.googlecode.com/files
+WEBP_SITE = http://downloads.webmproject.org/releases/webp
 WEBP_LICENSE = BSD-3c
 WEBP_LICENSE_FILES = COPYING
 WEBP_INSTALL_STAGING = YES
@@ -16,6 +16,12 @@ WEBP_CONF_OPTS += \
 	--with-jpeglibdir=$(STAGING_DIR)/usr/lib \
 	--with-tiffincludedir=$(STAGING_DIR)/usr/include \
 	--with-tifflibdir=$(STAGING_DIR)/usr/lib
+
+ifeq ($(BR2_PACKAGE_WEBP_DEMUX),y)
+WEBP_CONF_OPTS += --enable-libwebpdemux
+else
+WEBP_CONF_OPTS += --disable-libwebpdemux
+endif
 
 ifeq ($(BR2_PACKAGE_LIBPNG),y)
 WEBP_DEPENDENCIES += libpng

@@ -26,7 +26,10 @@ JFFS2_OPTS += -b
 SUMTOOL_OPTS += -b
 endif
 
-JFFS2_OPTS += -s $(BR2_TARGET_ROOTFS_JFFS2_PAGESIZE)
+ifeq ($(BR2_TARGET_ROOTFS_JFFS2_USE_CUSTOM_PAGESIZE),y)
+JFFS2_OPTS += -s $(BR2_TARGET_ROOTFS_JFFS2_CUSTOM_PAGESIZE)
+endif
+
 ifeq ($(BR2_TARGET_ROOTFS_JFFS2_NOCLEANMARKER),y)
 JFFS2_OPTS += -n
 SUMTOOL_OPTS += -n
@@ -36,8 +39,8 @@ ROOTFS_JFFS2_DEPENDENCIES = host-mtd
 
 ifneq ($(BR2_TARGET_ROOTFS_JFFS2_SUMMARY),)
 define ROOTFS_JFFS2_CMD
-	$(MKFS_JFFS2) $(JFFS2_OPTS) -d $(TARGET_DIR) -o $@.nosummary && \
-	$(SUMTOOL) $(SUMTOOL_OPTS) -i $@.nosummary -o $@ && \
+	$(MKFS_JFFS2) $(JFFS2_OPTS) -d $(TARGET_DIR) -o $@.nosummary
+	$(SUMTOOL) $(SUMTOOL_OPTS) -i $@.nosummary -o $@
 	rm $@.nosummary
 endef
 else

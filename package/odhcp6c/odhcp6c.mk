@@ -4,13 +4,13 @@
 #
 ################################################################################
 
-ODHCP6C_VERSION = 8d9b60fb496000988f3633951f2e30380fc2de50
+ODHCP6C_VERSION = 7533a6243dc3ac5a747cf6ccbc4d0539dafd3e07
 ODHCP6C_SITE = $(call github,sbyx,odhcp6c,$(ODHCP6C_VERSION))
 ODHCP6C_LICENSE = GPLv2
 ODHCP6C_LICENSE_FILES = COPYING
 
 define ODHCP6C_INSTALL_SCRIPT
-        $(INSTALL) -m 0755 -D $(@D)/odhcp6c-example-script.sh \
+	$(INSTALL) -m 0755 -D $(@D)/odhcp6c-example-script.sh \
 		$(TARGET_DIR)/usr/sbin/odhcp6c-update
 endef
 

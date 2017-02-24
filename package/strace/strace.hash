@@ -1,3 +1,2 @@
-# From http://sourceforge.net/projects/strace/files/strace/4.10/
-md5	107a5be455493861189e9b57a3a51912	strace-4.10.tar.xz
-sha1	5c3ec4c5a9eeb440d7ec70514923c2e7e7f9ab6c	strace-4.10.tar.xz
+# Locally computed
+sha256	5bed5110b243dce6864bedba269446c18c8c63f553cdd7fd4f808d89a764712f	strace-4.14.tar.xz

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LIBVNCSERVER_VERSION = 0.9.10
+LIBVNCSERVER_VERSION = 0.9.11
 LIBVNCSERVER_SOURCE = LibVNCServer-$(LIBVNCSERVER_VERSION).tar.gz
 LIBVNCSERVER_SITE = https://github.com/LibVNC/libvncserver/archive
 LIBVNCSERVER_LICENSE = GPLv2+
@@ -26,10 +26,6 @@ LIBVNCSERVER_CONF_OPTS += --with-sdl-config=/bin/false
 
 ifneq ($(BR2_TOOLCHAIN_HAS_THREADS),y)
 LIBVNCSERVER_CONF_OPTS += --without-pthread
-endif
-
-ifneq ($(BR2_INET_IPV6),y)
-LIBVNCSERVER_CONF_OPTS += --without-ipv6
 endif
 
 # openssl supports needs NPTL thread support

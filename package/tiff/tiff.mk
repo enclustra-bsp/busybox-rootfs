@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-TIFF_VERSION = 4.0.3
+TIFF_VERSION = 4.0.7
 TIFF_SITE = http://download.osgeo.org/libtiff
 TIFF_LICENSE = tiff license
 TIFF_LICENSE_FILES = COPYRIGHT
@@ -15,35 +15,13 @@ TIFF_CONF_OPTS = \
 
 TIFF_DEPENDENCIES = host-pkgconf
 
-TIFF_TOOLS_TO_DELETE = \
-	bmp2tiff \
-	fax2ps \
-	fax2tiff \
-	gif2tiff \
-	pal2rgb \
-	ppm2tiff \
-	ras2tiff \
-	raw2tiff \
-	rgb2ycbcr \
-	thumbnail \
-	tiff2bw \
-	tiff2ps \
-	tiff2rgba \
-	tiffcmp \
-	tiffcrop \
-	tiffdither \
-	tiffdump \
-	tiffinfo \
-	tiffmedian \
-	tiffset \
-	tiffsplit \
-
-ifeq ($(BR2_PACKAGE_TIFF_TIFF2PDF),)
-TIFF_TOOLS_TO_DELETE += tiff2pdf
-endif
-ifeq ($(BR2_PACKAGE_TIFF_TIFFCP),)
-TIFF_TOOLS_TO_DELETE += tiffcp
-endif
+HOST_TIFF_CONF_OPTS = \
+	--disable-cxx \
+	--without-x \
+	--disable-zlib \
+	--disable-lzma \
+	--disable-jpeg
+HOST_TIFF_DEPENDENCIES = host-pkgconf
 
 ifneq ($(BR2_PACKAGE_TIFF_CCITT),y)
 TIFF_CONF_OPTS += --disable-ccitt
@@ -79,6 +57,12 @@ else
 TIFF_DEPENDENCIES += zlib
 endif
 
+ifneq ($(BR2_PACKAGE_TIFF_XZ),y)
+TIFF_CONF_OPTS += --disable-lzma
+else
+TIFF_DEPENDENCIES += xz
+endif
+
 ifneq ($(BR2_PACKAGE_TIFF_PIXARLOG),y)
 TIFF_CONF_OPTS += --disable-pixarlog
 endif
@@ -97,10 +81,12 @@ ifneq ($(BR2_PACKAGE_TIFF_JBIG),y)
 TIFF_CONF_OPTS += --disable-jbig
 endif
 
-define TIFF_REMOVE_TOOLS_FIXUP
-	rm -f $(addprefix $(TARGET_DIR)/usr/bin/,$(TIFF_TOOLS_TO_DELETE))
-endef
+TIFF_SUBDIRS = port libtiff
+ifeq ($(BR2_PACKAGE_TIFF_UTILITIES),y)
+TIFF_SUBDIRS += tools
+endif
 
-TIFF_POST_INSTALL_TARGET_HOOKS += TIFF_REMOVE_TOOLS_FIXUP
+TIFF_MAKE = $(MAKE) SUBDIRS="$(TIFF_SUBDIRS)"
 
 $(eval $(autotools-package))
+$(eval $(host-autotools-package))

@@ -1,8 +1,7 @@
-config BR2_PACKAGE_COLLECTD
+menuconfig BR2_PACKAGE_COLLECTD
 	bool "collectd"
 	# Uses fork()
 	depends on BR2_USE_MMU
-	depends on BR2_INET_IPV6
 	depends on BR2_TOOLCHAIN_HAS_THREADS
 	depends on !BR2_STATIC_LIBS
 	help
@@ -40,6 +39,7 @@ config BR2_PACKAGE_COLLECTD_VALUE
 	bool "value"
 	help
 	  Select values by their data sources' values.
+
 endmenu
 
 menu "misc plugins"
@@ -56,6 +56,12 @@ config BR2_PACKAGE_COLLECTD_LOGFILE
 	default y
 	help
 	  Writes log messages to a file or STDOUT/STDERR.
+
+config BR2_PACKAGE_COLLECTD_LOGSTASH
+	bool "logstash"
+	select BR2_PACKAGE_YAJL
+	help
+	  Writes log messages formatted as logstash JSON events.
 
 config BR2_PACKAGE_COLLECTD_NOTIFY_EMAIL
 	bool "notify_email"
@@ -109,6 +115,12 @@ config BR2_PACKAGE_COLLECTD_BIND
 	select BR2_PACKAGE_LIBXML2
 	help
 	  Collects BIND DNS statistics.
+
+config BR2_PACKAGE_COLLECTD_CEPH
+	bool "ceph"
+	select BR2_PACKAGE_YAJL
+	help
+	  Statistics from the Ceph distributed storage system.
 
 config BR2_PACKAGE_COLLECTD_CGROUPS
 	bool "cgroups"
@@ -173,6 +185,11 @@ config BR2_PACKAGE_COLLECTD_DNS
 	help
 	  Collects statistics of DNS traffic using libpcap.
 
+config BR2_PACKAGE_COLLECTD_DRBD
+	bool "drbd"
+	help
+	  Collect individual drbd resource statistics.
+
 config BR2_PACKAGE_COLLECTD_ENTROPY
 	bool "entropy"
 	help
@@ -189,6 +206,11 @@ config BR2_PACKAGE_COLLECTD_EXEC
 	  Executes scripts and reads values back that are printed
 	  to STDOUT by that program.
 
+config BR2_PACKAGE_COLLECTD_FHCOUNT
+	bool "fhcount"
+	help
+	  File handles statistics.
+
 config BR2_PACKAGE_COLLECTD_FILECOUNT
 	bool "filecount"
 	help
@@ -204,6 +226,12 @@ config BR2_PACKAGE_COLLECTD_INTERFACE
 	bool "interface"
 	help
 	  Collects information about the traffic of network interfaces.
+
+config BR2_PACKAGE_COLLECTD_IPC
+	bool "ipc"
+	help
+	  IPC counters: semaphores used, number of allocated segments
+	  in shared memory and more.
 
 config BR2_PACKAGE_COLLECTD_IPTABLES
 	bool "iptables"
@@ -257,7 +285,7 @@ config BR2_PACKAGE_COLLECTD_MEMORY
 
 config BR2_PACKAGE_COLLECTD_MODBUS
 	bool "modbus"
-	select BR2_PACKAGE_MODBUS
+	select BR2_PACKAGE_LIBMODBUS
 	help
 	  Reads register values from a modbus "slave" via Modbus/TCP.
 
@@ -270,12 +298,8 @@ config BR2_PACKAGE_COLLECTD_MYSQL
 	help
 	  Connects to a MySQL database and issues a "show status" command.
 
-comment "netlink support needs a toolchain w/ largefile"
-	depends on !BR2_LARGEFILE
-
 config BR2_PACKAGE_COLLECTD_NETLINK
 	bool "netlink"
-	depends on BR2_LARGEFILE
 	select BR2_PACKAGE_LIBMNL
 	help
 	  Get statistics for interfaces, qdiscs, classes, and filters.
@@ -302,6 +326,16 @@ config BR2_PACKAGE_COLLECTD_OLSRD
 	help
 	  Reads information about meshed networks from olsrd.
 
+config BR2_PACKAGE_COLLECTD_OPENLDAP
+	bool "openldap"
+	depends on BR2_USE_WCHAR
+	select BR2_PACKAGE_OPENLDAP
+	help
+	  Read monitoring information from OpenLDAP's cn=Monitor subtree.
+
+comment "openldap support needs a toolchain w/ wchar"
+	depends on !BR2_USE_WCHAR
+
 config BR2_PACKAGE_COLLECTD_OPENVPN
 	bool "openvpn"
 	help
@@ -309,7 +343,6 @@ config BR2_PACKAGE_COLLECTD_OPENVPN
 
 config BR2_PACKAGE_COLLECTD_PING
 	bool "ping"
-	depends on BR2_INET_IPV6
 	select BR2_PACKAGE_LIBOPING
 	help
 	  Mesures network latency using ICMP "echo requests".
@@ -343,6 +376,17 @@ config BR2_PACKAGE_COLLECTD_SERIAL
 	bool "serial"
 	help
 	  Collects the traffic on serial interfaces.
+
+config BR2_PACKAGE_COLLECTD_SMART
+	bool "SMART"
+	depends on BR2_PACKAGE_HAS_UDEV # libatasmart
+	select BR2_PACKAGE_LIBATASMART
+	help
+	  Collect SMART statistics, notably load cycle count, temperature
+	  and bad sectors.
+
+comment "SMART requires udev to be enabled"
+	depends on !BR2_PACKAGE_HAS_UDEV
 
 config BR2_PACKAGE_COLLECTD_STATSD
 	bool "StatsD"
@@ -407,6 +451,11 @@ config BR2_PACKAGE_COLLECTD_WIRELESS
 	help
 	  Collects signal quality, power and noise ratio for WLAN cards.
 
+config BR2_PACKAGE_COLLECTD_ZOOKEEPER
+	bool "zookeeper"
+	help
+	  Read data from Zookeeper's MNTR command.
+
 endmenu
 
 menu "target plugins"
@@ -450,18 +499,13 @@ config BR2_PACKAGE_COLLECTD_GRAPHITE
 
 config BR2_PACKAGE_COLLECTD_NETWORK
 	bool "network"
-	depends on BR2_INET_IPV6
 	help
 	  Send/receive values from other instances of collectd.
 
 config BR2_PACKAGE_COLLECTD_RRDTOOL
 	bool "rrdtool"
 	depends on BR2_USE_WCHAR # rrdtool
-	select BR2_PACKAGE_FREETYPE
-	select BR2_PACKAGE_LIBART
-	select BR2_PACKAGE_LIBPNG
 	select BR2_PACKAGE_RRDTOOL
-	select BR2_PACKAGE_ZLIB
 	help
 	  Writes values to RRD-files.
 
@@ -474,6 +518,7 @@ config BR2_PACKAGE_COLLECTD_RIEMANN
 	# protobuf-c -> host-protobuf
 	depends on BR2_HOSTARCH = "x86_64" || BR2_HOSTARCH = "x86"
 	select BR2_PACKAGE_PROTOBUF_C
+	select BR2_PACKAGE_LIBTOOL
 	help
 	  Sends data to Riemann, a stream processing and monitoring system.
 
@@ -484,15 +529,32 @@ config BR2_PACKAGE_COLLECTD_UNIXSOCK
 	  One can send commands to the daemon and receive information.
 
 config BR2_PACKAGE_COLLECTD_WRITEHTTP
-	bool "writehttp"
+	bool "write_http"
 	select BR2_PACKAGE_LIBCURL
 	help
 	  Sends values collected to a web-server using HTTP POST and PUTVAL.
+
+config BR2_PACKAGE_COLLECTD_WRITELOG
+	bool "write_log"
+	help
+	  Writes data to the log.
+
+config BR2_PACKAGE_COLLECTD_WRITESENSU
+	bool "write_sensu"
+	help
+	  Sends data to Sensu, a stream processing and monitoring system,
+	  via the Sensu client local TCP socket.
+
+config BR2_PACKAGE_COLLECTD_WRITETSDB
+	bool "write_tsdb"
+	help
+	  Sends data OpenTSDB, a scalable no master, no shared state time
+	  series database.
 
 endmenu
 
 endif
 
-comment "collectd needs a toolchain w/ IPv6, threads, dynamic library"
-	depends on !BR2_TOOLCHAIN_HAS_THREADS || !BR2_INET_IPV6 || BR2_STATIC_LIBS
+comment "collectd needs a toolchain w/ threads, dynamic library"
+	depends on !BR2_TOOLCHAIN_HAS_THREADS || BR2_STATIC_LIBS
 	depends on BR2_USE_MMU

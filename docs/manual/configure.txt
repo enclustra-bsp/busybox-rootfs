@@ -31,7 +31,7 @@ code for your system. It consists of a compiler (in our case, +gcc+),
 binary utils like assembler and linker (in our case, +binutils+) and a
 C standard library (for example
 http://www.gnu.org/software/libc/libc.html[GNU Libc],
-http://www.uclibc.org/[uClibc]).
+http://www.uclibc-ng.org/[uClibc-ng]).
 
 The system installed on your development station certainly already has
 a compilation toolchain that you can use to compile an application
@@ -81,9 +81,9 @@ by itself a cross-compilation toolchain, before building the userspace
 applications and libraries for your target embedded system.
 
 This backend supports several C libraries:
-http://www.uclibc.org[uClibc], the
+http://www.uclibc-ng.org[uClibc-ng],
 http://www.gnu.org/software/libc/libc.html[glibc] and
-http://www.eglibc.org[eglibc].
+http://www.musl-libc.org[musl].
 
 Once you have selected this backend, a number of options appear. The
 most important ones allow to:
@@ -109,20 +109,19 @@ most important ones allow to:
  * Change the version of the GCC compiler, binutils and the C library.
 
  * Select a number of toolchain options (uClibc only): whether the
-   toolchain should have largefile support (i.e. support for files
-   larger than 2 GB on 32 bits systems), IPv6 support, RPC support
-   (used mainly for NFS), wide-char support, locale support (for
-   internationalization), C++ support or thread support. Depending on
-   which options you choose, the number of userspace applications and
-   libraries visible in Buildroot menus will change: many applications
-   and libraries require certain toolchain options to be enabled. Most
-   packages show a comment when a certain toolchain option is required
-   to be able to enable those packages. If needed, you can further
-   refine the uClibc configuration by running +make
-   uclibc-menuconfig+. Note however that all packages in Buildroot are
-   tested against the default uClibc configuration bundled in
-   Buildroot: if you deviate from this configuration by removing
-   features from uClibc, some packages may no longer build.
+   toolchain should have RPC support (used mainly for NFS),
+   wide-char support, locale support (for internationalization),
+   C++ support or thread support. Depending on which options you choose,
+   the number of userspace applications and libraries visible in
+   Buildroot menus will change: many applications and libraries require
+   certain toolchain options to be enabled. Most packages show a comment
+   when a certain toolchain option is required to be able to enable
+   those packages. If needed, you can further refine the uClibc
+   configuration by running +make uclibc-menuconfig+. Note however that
+   all packages in Buildroot are tested against the default uClibc
+   configuration bundled in Buildroot: if you deviate from this
+   configuration by removing features from uClibc, some packages may no
+   longer build.
 
 It is worth noting that whenever one of those options is modified,
 then the entire toolchain and system must be rebuilt. See
@@ -178,9 +177,9 @@ Then, you have three solutions to use an external toolchain:
   external toolchain uses the 'glibc' library, you only have to tell
   whether your toolchain supports C\++ or not and whether it has
   built-in RPC support. If your external toolchain uses the 'uClibc'
-  library, then you have to tell Buildroot if it supports largefile,
-  IPv6, RPC, wide-char, locale, program invocation, threads and
-  C++. At the beginning of the execution, Buildroot will tell you if
+  library, then you have to tell Buildroot if it supports RPC,
+  wide-char, locale, program invocation, threads and C++.
+  At the beginning of the execution, Buildroot will tell you if
   the selected options do not match the toolchain configuration.
 
 Our external toolchain support has been tested with toolchains from
@@ -296,39 +295,42 @@ different solutions to handle the +/dev+ directory :
    responsibility to enable those two options (if you fail to do so,
    your Buildroot system will not boot).
 
- * The third solution is *Dynamic using mdev*. This method also relies
-   on the _devtmpfs_ virtual filesystem detailed above (so the
-   requirement to have +CONFIG_DEVTMPFS+ and +CONFIG_DEVTMPFS_MOUNT+
-   enabled in the kernel configuration still apply), but adds the
-   +mdev+ userspace utility on top of it. +mdev+ is a program part of
-   BusyBox that the kernel will call every time a device is added or
-   removed. Thanks to the +/etc/mdev.conf+ configuration file, +mdev+
-   can be configured to for example, set specific permissions or
-   ownership on a device file, call a script or application whenever a
-   device appears or disappear, etc. Basically, it allows _userspace_
-   to react on device addition and removal events. +mdev+ can for
-   example be used to automatically load kernel modules when devices
-   appear on the system. +mdev+ is also important if you have devices
-   that require a firmware, as it will be responsible for pushing the
-   firmware contents to the kernel. +mdev+ is a lightweight
-   implementation (with fewer features) of +udev+. For more details
-   about +mdev+ and the syntax of its configuration file, see
+ * The third solution is *Dynamic using devtmpfs + mdev*. This method
+   also relies on the _devtmpfs_ virtual filesystem detailed above (so
+   the requirement to have +CONFIG_DEVTMPFS+ and
+   +CONFIG_DEVTMPFS_MOUNT+ enabled in the kernel configuration still
+   apply), but adds the +mdev+ userspace utility on top of it. +mdev+
+   is a program part of BusyBox that the kernel will call every time a
+   device is added or removed. Thanks to the +/etc/mdev.conf+
+   configuration file, +mdev+ can be configured to for example, set
+   specific permissions or ownership on a device file, call a script
+   or application whenever a device appears or disappear,
+   etc. Basically, it allows _userspace_ to react on device addition
+   and removal events. +mdev+ can for example be used to automatically
+   load kernel modules when devices appear on the system. +mdev+ is
+   also important if you have devices that require a firmware, as it
+   will be responsible for pushing the firmware contents to the
+   kernel. +mdev+ is a lightweight implementation (with fewer
+   features) of +udev+. For more details about +mdev+ and the syntax
+   of its configuration file, see
    http://git.busybox.net/busybox/tree/docs/mdev.txt.
 
- * The fourth solution is *Dynamic using eudev*. This method also
-   relies on the _devtmpfs_ virtual filesystem detailed above, but
-   adds the +eudev+ userspace daemon on top of it. +eudev+ is a daemon
-   that runs in the background, and gets called by the kernel when a
-   device gets added or removed from the system. It is a more
-   heavyweight solution than +mdev+, but provides higher flexibility.
-   +eudev+ is a standalone version of +udev+, the original userspace
-   daemon used in most desktop Linux distributions, which is now part
-   of Systemd. For more details, see http://en.wikipedia.org/wiki/Udev.
+ * The fourth solution is *Dynamic using devtmpfs + eudev*. This
+   method also relies on the _devtmpfs_ virtual filesystem detailed
+   above, but adds the +eudev+ userspace daemon on top of it. +eudev+
+   is a daemon that runs in the background, and gets called by the
+   kernel when a device gets added or removed from the system. It is a
+   more heavyweight solution than +mdev+, but provides higher
+   flexibility.  +eudev+ is a standalone version of +udev+, the
+   original userspace daemon used in most desktop Linux distributions,
+   which is now part of Systemd. For more details, see
+   http://en.wikipedia.org/wiki/Udev.
 
 The Buildroot developers recommendation is to start with the *Dynamic
 using devtmpfs only* solution, until you have the need for userspace
 to be notified when devices are added/removed, or if firmwares are
-needed, in which case *Dynamic using mdev* is usually a good solution.
+needed, in which case *Dynamic using devtmpfs + mdev* is usually a
+good solution.
 
 Note that if +systemd+ is chosen as init system, /dev management will
 be performed by the +udev+ program provided by +systemd+.

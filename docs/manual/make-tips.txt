@@ -12,6 +12,12 @@ This is a collection of tips that help you make the most of Buildroot.
  $ make V=1 <target>
 --------------------
 
+.Display the list of boards with a defconfig:
+
+--------------------
+ $ make list-defconfigs
+--------------------
+
 .Display all available targets:
 
 --------------------
@@ -28,6 +34,8 @@ some settings in the +.config+ file may hide some targets:
   selected in the internal toolchain backend;
 * +barebox-menuconfig+ and +barebox-savedefconfig+ only work when the
   +barebox+ bootloader is enabled.
+* +uboot-menuconfig+ and +uboot-savedefconfig+ only work when the
+  +U-Boot+ bootloader is enabled.
 
 .Cleaning:
 

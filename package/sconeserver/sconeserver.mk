@@ -4,16 +4,17 @@
 #
 ################################################################################
 
-# Release 0.6.0 doesn't build cleanly, so use a recent
-# Git commit.
-SCONESERVER_VERSION = 3b886c3dda6eda39bcb27472d29ed7fd3185ba1d
+SCONESERVER_VERSION = d659468cd164e6a6cc12932cc6780566b04f8328
 SCONESERVER_SITE = $(call github,sconemad,sconeserver,$(SCONESERVER_VERSION))
 SCONESERVER_LICENSE = GPLv2+
 SCONESERVER_LICENSE_FILES = COPYING
-
+# fetching from Git, we need to generate the configure script
 SCONESERVER_AUTORECONF = YES
-SCONESERVER_DEPENDENCIES += pcre
-SCONESERVER_CONF_OPTS += --with-ip --with-local
+SCONESERVER_DEPENDENCIES = host-pkgconf pcre
+# disable markdown module because its git submodule cmark
+# https://github.com/sconemad/sconeserver/tree/master/markdown
+# has no cross-compile support provided by the sconeserver build system
+SCONESERVER_CONF_OPTS += --with-ip --with-local --with-ip6 --without-markdown
 
 # Sconeserver configure script fails to find the libxml2 headers.
 ifeq ($(BR2_PACKAGE_LIBXML2),y)
@@ -21,15 +22,12 @@ SCONESERVER_CONF_OPTS += \
 	--with-xml2-config="$(STAGING_DIR)/usr/bin/xml2-config"
 endif
 
-ifeq ($(BR2_INET_IPV6),y)
-SCONESERVER_CONF_OPTS += --with-ip6
-else
-SCONESERVER_CONF_OPTS += --without-ip6
-endif
-
 ifeq ($(BR2_PACKAGE_OPENSSL),y)
 SCONESERVER_DEPENDENCIES += openssl
 SCONESERVER_CONF_OPTS += --with-ssl
+ifeq ($(BR2_STATIC_LIBS),y)
+SCONESERVER_CONF_ENV += SSL_LIBADD=-lz
+endif
 else
 SCONESERVER_CONF_OPTS += --without-ssl
 endif
@@ -48,12 +46,12 @@ SCONESERVER_CONF_OPTS += --without-sconesite
 endif
 
 ifeq ($(BR2_PACKAGE_SCONESERVER_HTTP_SCONESITE_IMAGE),y)
-SCONESERVER_DEPENDENCIES += imagemagick host-pkgconf
+SCONESERVER_DEPENDENCIES += imagemagick
 SCONESERVER_CONF_OPTS += \
 	--with-sconesite-image \
 	--with-Magick++-config="$(STAGING_DIR)/usr/bin/Magick++-config"
 else
-SCONESERVER_CONF_OPTS += --without-sconesite-image
+SCONESERVER_CONF_OPTS += --without-sconesite-image --with-Magick++-config=no
 endif
 
 ifeq ($(BR2_PACKAGE_SCONESERVER_MYSQL),y)

@@ -1,7 +1,7 @@
 choice
 	prompt "Target CPU"
 	depends on BR2_bfin
-	default BR2_bf609
+	default BR2_bf532
 	help
 	  Specify target CPU
 config BR2_bf606
@@ -67,9 +67,6 @@ config BR2_ARCH
 
 config BR2_ENDIAN
 	default "LITTLE"
-
-config BR2_ARCH_HAS_ATOMICS
-	default y
 
 config BR2_GCC_TARGET_CPU
 	default bf606		if BR2_bf606

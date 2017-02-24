@@ -4,12 +4,12 @@
 #
 ################################################################################
 
-EXIM_VERSION = 4.85
+EXIM_VERSION = 4.87.1
 EXIM_SOURCE = exim-$(EXIM_VERSION).tar.bz2
-EXIM_SITE = ftp://ftp.exim.org/pub/exim/exim4
+EXIM_SITE = ftp://ftp.exim.org/pub/exim/exim4/old
 EXIM_LICENSE = GPLv2+
 EXIM_LICENSE_FILES = LICENCE
-EXIM_DEPENDENCIES = pcre berkeleydb
+EXIM_DEPENDENCIES = pcre berkeleydb host-pkgconf
 
 # Modify a variable value. It must already exist in the file, either
 # commented or not.
@@ -46,6 +46,8 @@ define EXIM_USE_DEFAULT_CONFIG_FILE
 	$(call exim-config-change,PCRE_CONFIG,no)
 	$(call exim-config-change,HAVE_ICONV,no)
 	$(call exim-config-unset,EXIM_MONITOR)
+	$(call exim-config-change,AUTH_PLAINTEXT,yes)
+	$(call exim-config-change,AUTH_CRAM_MD5,yes)
 endef
 
 ifeq ($(BR2_PACKAGE_DOVECOT),y)
@@ -62,10 +64,28 @@ define EXIM_USE_DEFAULT_CONFIG_FILE_CLAMAV
 endef
 endif
 
-# this specific toolchain lacks libnsl
-ifeq ($(BR2_TOOLCHAIN_EXTERNAL_SYNOPSYS_ARC_2014_12),y)
+ifeq ($(BR2_PACKAGE_OPENSSL),y)
+EXIM_DEPENDENCIES += openssl
+define EXIM_USE_DEFAULT_CONFIG_FILE_OPENSSL
+	$(call exim-config-change,SUPPORT_TLS,yes)
+	$(call exim-config-change,USE_OPENSSL_PC,openssl)
+endef
+endif
+
+# only glibc provides libnsl, remove -lnsl for all other toolchains
+# http://bugs.exim.org/show_bug.cgi?id=1564
+ifeq ($(BR2_TOOLCHAIN_USES_GLIBC),)
 define EXIM_REMOVE_LIBNSL_FROM_MAKEFILE
 	$(SED) 's/-lnsl//g' $(@D)/OS/Makefile-Linux
+endef
+endif
+
+# musl does not provide struct ip_options nor struct ip_opts (but it is
+# available with both glibc and uClibc)
+ifeq ($(BR2_TOOLCHAIN_USES_MUSL),y)
+define EXIM_FIX_IP_OPTIONS_FOR_MUSL
+	$(SED) 's/#define GLIBC_IP_OPTIONS/#define DARWIN_IP_OPTIONS/' \
+		$(@D)/OS/os.h-Linux
 endef
 endif
 
@@ -77,6 +97,7 @@ define EXIM_CONFIGURE_TOOLCHAIN
 	$(call exim-config-add,HOSTCC,$(HOSTCC))
 	$(call exim-config-add,HOSTCFLAGS,$(HOSTCFLAGS))
 	$(EXIM_REMOVE_LIBNSL_FROM_MAKEFILE)
+	$(EXIM_FIX_IP_OPTIONS_FOR_MUSL)
 endef
 
 ifneq ($(call qstrip,$(BR2_PACKAGE_EXIM_CUSTOM_CONFIG_FILE)),)
@@ -89,6 +110,7 @@ define EXIM_CONFIGURE_CMDS
 	$(EXIM_USE_DEFAULT_CONFIG_FILE)
 	$(EXIM_USE_DEFAULT_CONFIG_FILE_DOVECOT)
 	$(EXIM_USE_DEFAULT_CONFIG_FILE_CLAMAV)
+	$(EXIM_USE_DEFAULT_CONFIG_FILE_OPENSSL)
 	$(EXIM_CONFIGURE_TOOLCHAIN)
 endef
 endif # CUSTOM_CONFIG
@@ -101,7 +123,7 @@ endif
 # "The -j (parallel) flag must not be used with make"
 # (http://www.exim.org/exim-html-current/doc/html/spec_html/ch04.html)
 define EXIM_BUILD_CMDS
-	build=br $(MAKE1) -C $(@D) $(EXIM_STATIC_FLAGS)
+	$(TARGET_MAKE_ENV) build=br $(MAKE1) -C $(@D) $(EXIM_STATIC_FLAGS)
 endef
 
 # Need to replicate the LFLAGS in install, as exim still wants to build
@@ -119,6 +141,14 @@ endef
 define EXIM_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 755 package/exim/S86exim \
 		$(TARGET_DIR)/etc/init.d/S86exim
+endef
+
+define EXIM_INSTALL_INIT_SYSTEMD
+	$(INSTALL) -D -m 644 package/exim/exim.service \
+		$(TARGET_DIR)/usr/lib/systemd/system/exim.service
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -sf ../../../../usr/lib/systemd/system/exim.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/exim.service
 endef
 
 $(eval $(generic-package))
