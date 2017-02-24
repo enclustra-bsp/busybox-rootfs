@@ -5,7 +5,7 @@
 ################################################################################
 
 TCF_AGENT_VERSION = 7844ce1
-TCF_AGENT_SITE = ${BR2_ENCLUSTRA_SITE}
+TCF_AGENT_SITE = ${BR2_BACKUP_SITE}
 TCF_AGENT_SOURCE = tcf-agent-${TCF_AGENT_VERSION}.tar.gz
 
 define TCF_AGENT_BUILD_CMDS
