@@ -5,7 +5,7 @@
 ################################################################################
 
 OPENSSL_VERSION = 1.0.2a
-OPENSSL_SITE = $(BR2_ENCLUSTRA_SITE)
+OPENSSL_SITE = http://www.openssl.org/source
 OPENSSL_LICENSE = OpenSSL or SSLeay
 OPENSSL_LICENSE_FILES = LICENSE
 OPENSSL_INSTALL_STAGING = YES

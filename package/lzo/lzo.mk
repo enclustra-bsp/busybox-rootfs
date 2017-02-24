@@ -5,7 +5,7 @@
 ################################################################################
 
 LZO_VERSION = 2.08
-LZO_SITE = $(BR2_ENCLUSTRA_SITE)
+LZO_SITE = http://www.oberhumer.com/opensource/lzo/download
 LZO_LICENSE = GPLv2+
 LZO_LICENSE_FILES = COPYING
 LZO_INSTALL_STAGING = YES

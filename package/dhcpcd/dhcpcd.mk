@@ -6,7 +6,7 @@
 
 DHCPCD_VERSION = 6.7.1
 DHCPCD_SOURCE = dhcpcd-$(DHCPCD_VERSION).tar.bz2
-DHCPCD_SITE = $(BR2_ENCLUSTRA_SITE)
+DHCPCD_SITE = http://roy.marples.name/downloads/dhcpcd
 DHCPCD_DEPENDENCIES = host-pkgconf
 DHCPCD_LICENSE = BSD-2c
 

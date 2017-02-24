@@ -218,12 +218,6 @@ config BR2_GNU_MIRROR
 	     http://ftp.gnu.org/pub/gnu
 	     http://mirror.aarnet.edu.au/pub/gnu
 
-config BR2_ENCLUSTRA_SITE
-	string "Enclustra download site"
-	default "http://www.enclustra.com/binaries/enclustra-bsp/busybox-rootfs"
-	help
-	  Enclustra site to download from.
-
 endif
 
 config BR2_LUAROCKS_MIRROR

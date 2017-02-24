@@ -5,7 +5,7 @@
 ################################################################################
 
 BUSYBOX_VERSION = 1.23.2
-BUSYBOX_SITE = $(BR2_ENCLUSTRA_SITE)
+BUSYBOX_SITE = http://www.busybox.net/downloads
 BUSYBOX_SOURCE = busybox-$(BUSYBOX_VERSION).tar.bz2
 BUSYBOX_LICENSE = GPLv2
 BUSYBOX_LICENSE_FILES = LICENSE

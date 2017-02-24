@@ -21,7 +21,7 @@ else ifeq ($(BR2_UCLIBC_VERSION_XTENSA_GIT),y)
 UCLIBC_SITE = git://git.busybox.net/uClibc
 UCLIBC_SOURCE = uClibc-$(UCLIBC_VERSION).tar.gz
 else
-UCLIBC_SITE = $(BR2_ENCLUSTRA_SITE)
+UCLIBC_SITE = http://www.uclibc.org/downloads
 UCLIBC_SOURCE = uClibc-$(UCLIBC_VERSION).tar.xz
 endif
 

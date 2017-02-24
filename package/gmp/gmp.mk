@@ -5,7 +5,7 @@
 ################################################################################
 
 GMP_VERSION = 6.0.0a
-GMP_SITE = $(BR2_ENCLUSTRA_SITE)
+GMP_SITE = $(BR2_GNU_MIRROR)/gmp
 GMP_SOURCE = gmp-$(GMP_VERSION).tar.xz
 GMP_INSTALL_STAGING = YES
 GMP_LICENSE = LGPLv3+

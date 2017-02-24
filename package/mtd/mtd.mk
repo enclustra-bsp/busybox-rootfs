@@ -6,7 +6,7 @@
 
 MTD_VERSION = 1.5.1
 MTD_SOURCE = mtd-utils-$(MTD_VERSION).tar.bz2
-MTD_SITE = $(BR2_ENCLUSTRA_SITE)
+MTD_SITE = ftp://ftp.infradead.org/pub/mtd-utils
 MTD_LICENSE = GPLv2
 MTD_LICENSE_FILES = COPYING
 
