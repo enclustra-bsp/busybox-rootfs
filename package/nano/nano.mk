@@ -5,7 +5,7 @@
 ################################################################################
 
 NANO_VERSION = 2.4.0
-NANO_SITE = ${BR2_ENCLUSTRA_SITE}
+NANO_SITE = $(BR2_GNU_MIRROR)/nano
 NANO_LICENSE = GPLv3+
 NANO_LICENSE_FILES = COPYING
 NANO_CONF_OPTS = --without-slang
