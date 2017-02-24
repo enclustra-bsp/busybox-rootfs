@@ -5,7 +5,7 @@
 ################################################################################
 
 GETTEXT_VERSION = 0.19.4
-GETTEXT_SITE = ${BR2_ENCLUSTRA_SITE}
+GETTEXT_SITE = $(BR2_GNU_MIRROR)/gettext
 GETTEXT_SOURCE = gettext-$(GETTEXT_VERSION).tar.xz
 GETTEXT_INSTALL_STAGING = YES
 GETTEXT_LICENSE = GPLv2+
