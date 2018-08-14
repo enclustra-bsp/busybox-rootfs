@@ -4,12 +4,12 @@
 #
 ################################################################################
 
-MPD_VERSION_MAJOR = 0.19
-MPD_VERSION = $(MPD_VERSION_MAJOR).19
+MPD_VERSION_MAJOR = 0.20
+MPD_VERSION = $(MPD_VERSION_MAJOR).18
 MPD_SOURCE = mpd-$(MPD_VERSION).tar.xz
 MPD_SITE = http://www.musicpd.org/download/mpd/$(MPD_VERSION_MAJOR)
-MPD_DEPENDENCIES = host-pkgconf boost libglib2
-MPD_LICENSE = GPLv2+
+MPD_DEPENDENCIES = host-pkgconf boost
+MPD_LICENSE = GPL-2.0+
 MPD_LICENSE_FILES = COPYING
 MPD_AUTORECONF = YES
 
@@ -57,6 +57,13 @@ MPD_DEPENDENCIES += bzip2
 MPD_CONF_OPTS += --enable-bzip2
 else
 MPD_CONF_OPTS += --disable-bzip2
+endif
+
+ifeq ($(BR2_PACKAGE_MPD_CDIO_PARANOIA),y)
+MPD_DEPENDENCIES += libcdio-paranoia
+MPD_CONF_OPTS += --enable-cdio-paranoia
+else
+MPD_CONF_OPTS += --disable-cdio-paranoia
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_CURL),y)
@@ -111,6 +118,20 @@ MPD_DEPENDENCIES += lame
 MPD_CONF_OPTS += --enable-lame-encoder
 else
 MPD_CONF_OPTS += --disable-lame-encoder
+endif
+
+ifeq ($(BR2_PACKAGE_MPD_LIBMPDCLIENT),y)
+MPD_DEPENDENCIES += libmpdclient
+MPD_CONF_OPTS += --enable-libmpdclient
+else
+MPD_CONF_OPTS += --disable-libmpdclient
+endif
+
+ifeq ($(BR2_PACKAGE_MPD_LIBMMS),y)
+MPD_DEPENDENCIES += libmms
+MPD_CONF_OPTS += --enable-mms
+else
+MPD_CONF_OPTS += --disable-mms
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_LIBNFS),y)
@@ -222,7 +243,10 @@ endif
 
 ifeq ($(BR2_PACKAGE_MPD_TREMOR),y)
 MPD_DEPENDENCIES += tremor
-MPD_CONF_OPTS += --with-tremor
+# Help mpd to find tremor in static linking scenarios
+MPD_CONF_ENV += \
+	TREMOR_LIBS="`$(PKG_CONFIG_HOST_BINARY) --libs vorbisidec`"
+MPD_CONF_OPTS += --with-tremor=$(STAGING_DIR)/usr
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_TWOLAME),y)
@@ -233,7 +257,9 @@ MPD_CONF_OPTS += --disable-twolame-encoder
 endif
 
 ifeq ($(BR2_PACKAGE_MPD_UPNP),y)
-MPD_DEPENDENCIES += expat libupnp
+MPD_DEPENDENCIES += \
+	expat \
+	$(if $(BR2_PACKAGE_LIBUPNP),libupnp,libupnp18)
 MPD_CONF_OPTS += --enable-upnp
 else
 MPD_CONF_OPTS += --disable-upnp

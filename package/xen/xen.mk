@@ -4,11 +4,11 @@
 #
 ################################################################################
 
-XEN_VERSION = 4.7.0
-XEN_SITE = http://bits.xensource.com/oss-xen/release/$(XEN_VERSION)
-XEN_LICENSE = GPLv2
+XEN_VERSION = 4.10.1
+XEN_SITE = https://downloads.xenproject.org/release/xen/$(XEN_VERSION)
+XEN_LICENSE = GPL-2.0
 XEN_LICENSE_FILES = COPYING
-XEN_DEPENDENCIES = host-python
+XEN_DEPENDENCIES = host-acpica host-python
 
 # Calculate XEN_ARCH
 ifeq ($(ARCH),aarch64)
@@ -17,12 +17,15 @@ else ifeq ($(ARCH),arm)
 XEN_ARCH = arm32
 endif
 
-XEN_CONF_OPTS = --disable-ocamltools
+XEN_CONF_OPTS = \
+	--disable-ocamltools \
+	--with-initddir=/etc/init.d
 
-XEN_CONF_ENV = PYTHON=$(HOST_DIR)/usr/bin/python2
+XEN_CONF_ENV = PYTHON=$(HOST_DIR)/bin/python2
 XEN_MAKE_ENV = \
 	XEN_TARGET_ARCH=$(XEN_ARCH) \
 	CROSS_COMPILE=$(TARGET_CROSS) \
+	HOST_EXTRACFLAGS="-Wno-error" \
 	$(TARGET_CONFIGURE_OPTS)
 
 ifeq ($(BR2_PACKAGE_XEN_HYPERVISOR),y)
@@ -42,6 +45,7 @@ XEN_DEPENDENCIES += argp-standalone
 endif
 XEN_INSTALL_TARGET_OPTS += DESTDIR=$(TARGET_DIR) install-tools
 XEN_MAKE_OPTS += dist-tools
+XEN_CONF_OPTS += --with-extra-qemuu-configure-args="--disable-sdl"
 
 define XEN_INSTALL_INIT_SYSV
 	mv $(TARGET_DIR)/etc/init.d/xencommons $(TARGET_DIR)/etc/init.d/S50xencommons

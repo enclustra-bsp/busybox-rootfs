@@ -1,2 +1,5 @@
-# Hash from: http://ftp.gnome.org/pub/gnome/sources/gupnp-tools/0.8/gupnp-tools-0.8.12.sha256sum:
-sha256	658de96953608c4b1f47578ae563a7066d1f1983565daf22ad52b7b328ef97b1	gupnp-tools-0.8.12.tar.xz
+# Hash from: http://ftp.gnome.org/pub/gnome/sources/gupnp-tools/0.8/gupnp-tools-0.8.14.sha256sum:
+sha256	682b952b3cf43818c7d27549c152ea52e43320500820ab3392cf5a29a95e7efa	gupnp-tools-0.8.14.tar.xz
+
+# Locally computed:
+sha256	ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6	COPYING

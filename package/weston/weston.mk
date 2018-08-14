@@ -4,20 +4,21 @@
 #
 ################################################################################
 
-WESTON_VERSION = 1.12.0
+WESTON_VERSION = 4.0.0
 WESTON_SITE = http://wayland.freedesktop.org/releases
 WESTON_SOURCE = weston-$(WESTON_VERSION).tar.xz
 WESTON_LICENSE = MIT
 WESTON_LICENSE_FILES = COPYING
 
 WESTON_DEPENDENCIES = host-pkgconf wayland wayland-protocols \
-	libxkbcommon pixman libpng jpeg mtdev udev cairo libinput \
+	libxkbcommon pixman libpng jpeg udev cairo libinput libdrm \
 	$(if $(BR2_PACKAGE_WEBP),webp)
 
 WESTON_CONF_OPTS = \
 	--with-dtddir=$(STAGING_DIR)/usr/share/wayland \
 	--disable-headless-compositor \
 	--disable-colord \
+	--disable-devdocs \
 	--disable-setuid-install
 
 WESTON_MAKE_OPTS = \
@@ -56,6 +57,7 @@ WESTON_DEPENDENCIES += libegl
 else
 WESTON_CONF_OPTS += \
 	--disable-egl \
+	--disable-simple-dmabuf-drm-client \
 	--disable-simple-egl-clients
 endif
 
@@ -84,7 +86,6 @@ ifeq ($(BR2_PACKAGE_WESTON_DRM),y)
 WESTON_CONF_OPTS += \
 	--enable-drm-compositor \
 	WESTON_NATIVE_BACKEND=drm-backend.so
-WESTON_DEPENDENCIES += libdrm
 else
 WESTON_CONF_OPTS += --disable-drm-compositor
 endif
@@ -107,7 +108,7 @@ endif
 
 ifeq ($(BR2_PACKAGE_LIBVA),y)
 WESTON_CONF_OPTS += --enable-vaapi-recorder
-WESTON_DEPENDENIES += libva
+WESTON_DEPENDENCIES += libva
 else
 WESTON_CONF_OPTS += --disable-vaapi-recorder
 endif

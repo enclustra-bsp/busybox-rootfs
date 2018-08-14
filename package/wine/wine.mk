@@ -4,10 +4,10 @@
 #
 ################################################################################
 
-WINE_VERSION = 1.8.5
-WINE_SOURCE = wine-$(WINE_VERSION).tar.bz2
-WINE_SITE = https://dl.winehq.org/wine/source/1.8
-WINE_LICENSE = LGPLv2.1+
+WINE_VERSION = 3.0
+WINE_SOURCE = wine-$(WINE_VERSION).tar.xz
+WINE_SITE = https://dl.winehq.org/wine/source/3.0
+WINE_LICENSE = LGPL-2.1+
 WINE_LICENSE_FILES = COPYING.LIB LICENSE
 WINE_DEPENDENCIES = host-bison host-flex host-wine
 
@@ -34,7 +34,7 @@ WINE_CONF_OPTS = \
 # wrapper believes what the real gcc is named, and force the tuple of
 # the external toolchain, not the one we compute in GNU_TARGET_NAME.
 ifeq ($(BR2_TOOLCHAIN_EXTERNAL),y)
-WINE_CONF_OPTS += TARGETFLAGS="-b $(call qstrip,$(BR2_TOOLCHAIN_EXTERNAL_PREFIX))"
+WINE_CONF_OPTS += TARGETFLAGS="-b $(TOOLCHAIN_EXTERNAL_PREFIX)"
 endif
 
 ifeq ($(BR2_PACKAGE_ALSA_LIB)$(BR2_PACKAGE_ALSA_LIB_SEQ)$(BR2_PACKAGE_ALSA_LIB_RAWMIDI),yyy)
@@ -85,9 +85,9 @@ else
 WINE_CONF_OPTS += --without-gnutls
 endif
 
-ifeq ($(BR2_PACKAGE_GST_PLUGINS_BASE),y)
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_BASE),y)
 WINE_CONF_OPTS += --with-gstreamer
-WINE_DEPENDENCIES += gst-plugins-base
+WINE_DEPENDENCIES += gst1-plugins-base
 else
 WINE_CONF_OPTS += --without-gstreamer
 endif
@@ -118,6 +118,13 @@ WINE_CONF_OPTS += --with-glu
 WINE_DEPENDENCIES += libglu
 else
 WINE_CONF_OPTS += --without-glu
+endif
+
+ifeq ($(BR2_PACKAGE_LIBKRB5),y)
+WINE_CONF_OPTS += --with-krb5
+WINE_DEPENDENCIES += libkrb5
+else
+WINE_CONF_OPTS += --without-krb5
 endif
 
 ifeq ($(BR2_PACKAGE_LIBPCAP),y)
@@ -219,6 +226,13 @@ WINE_CONF_OPTS += --with-tiff
 WINE_DEPENDENCIES += tiff
 else
 WINE_CONF_OPTS += --without-tiff
+endif
+
+ifeq ($(BR2_PACKAGE_HAS_UDEV),y)
+WINE_CONF_OPTS += --with-udev
+WINE_DEPENDENCIES += udev
+else
+WINE_CONF_OPTS += --without-udev
 endif
 
 ifeq ($(BR2_PACKAGE_XLIB_LIBX11),y)
@@ -340,6 +354,7 @@ HOST_WINE_CONF_OPTS += \
 	--without-gstreamer \
 	--without-hal \
 	--without-jpeg \
+	--without-krb5 \
 	--without-ldap \
 	--without-mpg123 \
 	--without-netapi \

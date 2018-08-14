@@ -12,7 +12,17 @@ Build
 
 First, configure Buildroot for your i.MX6UL EVK board:
 
+In order to to do so there are two supported options:
+
   make freescale_imx6ulevk_defconfig
+
+if you plan to use NXP provided U-Boot and kernel.
+
+or
+
+  make imx6ulevk_defconfig
+
+if you plan to use mainline U-Boot and mainline kernel.
 
 Build all components:
 
@@ -43,7 +53,7 @@ command as root:
 *** WARNING! This will destroy all the card content. Use with care! ***
 
 For details about the medium image layout, see the definition in
-board/freescale/common/genimage.cfg.template.
+board/freescale/common/imx/genimage.cfg.template.
 
 Boot the i.MX6UL EVK board
 =========================

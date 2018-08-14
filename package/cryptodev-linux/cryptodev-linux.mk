@@ -4,10 +4,10 @@
 #
 ################################################################################
 
-CRYPTODEV_LINUX_VERSION = 1.8
-CRYPTODEV_LINUX_SITE = http://download.gna.org/cryptodev-linux
+CRYPTODEV_LINUX_VERSION = 0a54e38b264d9a3bed74c642a61b88191660d0f8
+CRYPTODEV_LINUX_SITE = $(call github,cryptodev-linux,cryptodev-linux,$(CRYPTODEV_LINUX_VERSION))
 CRYPTODEV_LINUX_INSTALL_STAGING = YES
-CRYPTODEV_LINUX_LICENSE = GPLv2+
+CRYPTODEV_LINUX_LICENSE = GPL-2.0+
 CRYPTODEV_LINUX_LICENSE_FILES = COPYING
 
 CRYPTODEV_LINUX_PROVIDES = cryptodev

@@ -4,14 +4,14 @@
 #
 ################################################################################
 
-LIBCURL_VERSION = 7.52.1
-LIBCURL_SOURCE = curl-$(LIBCURL_VERSION).tar.bz2
+LIBCURL_VERSION = 7.61.0
+LIBCURL_SOURCE = curl-$(LIBCURL_VERSION).tar.xz
 LIBCURL_SITE = https://curl.haxx.se/download
 LIBCURL_DEPENDENCIES = host-pkgconf \
 	$(if $(BR2_PACKAGE_ZLIB),zlib) \
 	$(if $(BR2_PACKAGE_LIBIDN),libidn) \
 	$(if $(BR2_PACKAGE_RTMPDUMP),rtmpdump)
-LIBCURL_LICENSE = ISC
+LIBCURL_LICENSE = curl
 LIBCURL_LICENSE_FILES = COPYING
 LIBCURL_INSTALL_STAGING = YES
 
@@ -19,13 +19,25 @@ LIBCURL_INSTALL_STAGING = YES
 # on non-MMU platforms. Moreover, this authentication method is
 # probably almost never used. See
 # http://curl.haxx.se/docs/manpage.html#--ntlm.
-LIBCURL_CONF_OPTS = --disable-verbose --disable-manual --disable-ntlm-wb \
+LIBCURL_CONF_OPTS = --disable-manual --disable-ntlm-wb \
 	--enable-hidden-symbols --with-random=/dev/urandom --disable-curldebug
+
+ifeq ($(BR2_TOOLCHAIN_HAS_THREADS),y)
+LIBCURL_CONF_OPTS += --enable-threaded-resolver
+else
+LIBCURL_CONF_OPTS += --disable-threaded-resolver
+endif
+
+ifeq ($(BR2_PACKAGE_LIBCURL_VERBOSE),y)
+LIBCURL_CONF_OPTS += --enable-verbose
+else
+LIBCURL_CONF_OPTS += --disable-verbose
+endif
+
 LIBCURL_CONFIG_SCRIPTS = curl-config
 
 ifeq ($(BR2_PACKAGE_OPENSSL),y)
 LIBCURL_DEPENDENCIES += openssl
-LIBCURL_CONF_ENV += ac_cv_lib_crypto_CRYPTO_lock=yes
 # configure adds the cross openssl dir to LD_LIBRARY_PATH which screws up
 # native stuff during the rest of configure when target == host.
 # Fix it by setting LD_LIBRARY_PATH to something sensible so those libs
@@ -63,6 +75,13 @@ else
 LIBCURL_CONF_OPTS += --without-libssh2
 endif
 
+ifeq ($(BR2_PACKAGE_BROTLI),y)
+LIBCURL_DEPENDENCIES += brotli
+LIBCURL_CONF_OPTS += --with-brotli
+else
+LIBCURL_CONF_OPTS += --without-brotli
+endif
+
 define LIBCURL_FIX_DOT_PC
 	printf 'Requires: openssl\n' >>$(@D)/libcurl.pc.in
 endef
@@ -75,4 +94,18 @@ endef
 LIBCURL_POST_INSTALL_TARGET_HOOKS += LIBCURL_TARGET_CLEANUP
 endif
 
+HOST_LIBCURL_DEPENDENCIES = host-openssl
+HOST_LIBCURL_CONF_OPTS = \
+	--disable-manual \
+	--disable-ntlm-wb \
+	--disable-curldebug \
+	--with-ssl \
+	--without-gnutls \
+	--without-mbedtls \
+	--without-polarssl \
+	--without-nss
+
+HOST_LIBCURL_POST_PATCH_HOOKS += LIBCURL_FIX_DOT_PC
+
 $(eval $(autotools-package))
+$(eval $(host-autotools-package))

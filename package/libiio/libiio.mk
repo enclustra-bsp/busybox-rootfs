@@ -4,15 +4,18 @@
 #
 ################################################################################
 
-LIBIIO_VERSION = 0.7
+LIBIIO_VERSION = 0.14
 LIBIIO_SITE = $(call github,analogdevicesinc,libiio,v$(LIBIIO_VERSION))
 LIBIIO_INSTALL_STAGING = YES
-LIBIIO_LICENSE = LGPLv2.1+
+LIBIIO_LICENSE = LGPL-2.1+
 LIBIIO_LICENSE_FILES = COPYING.txt
 
 LIBIIO_CONF_OPTS = -DENABLE_IPV6=ON \
 	-DWITH_LOCAL_BACKEND=$(if $(BR2_PACKAGE_LIBIIO_LOCAL_BACKEND),ON,OFF) \
 	-DWITH_NETWORK_BACKEND=$(if $(BR2_PACKAGE_LIBIIO_NETWORK_BACKEND),ON,OFF) \
+	-DWITH_MATLAB_BINDINGS_API=OFF \
+	-DMATLAB_BINDINGS=OFF \
+	-DINSTALL_UDEV_RULE=$(if $(BR2_PACKAGE_HAS_UDEV),ON,OFF) \
 	-DWITH_TESTS=$(if $(BR2_PACKAGE_LIBIIO_TESTS),ON,OFF) \
 	-DWITH_DOC=OFF
 
@@ -44,13 +47,24 @@ else
 LIBIIO_CONF_OPTS += -DWITH_IIOD=OFF
 endif
 
-# Avahi support in libiio requires avahi-client, which needs avahi-daemon
-ifeq ($(BR2_PACKAGE_AVAHI)$(BR2_PACKAGE_AVAHI_DAEMON),yy)
+ifeq ($(BR2_PACKAGE_LIBIIO_IIOD_USBD),y)
+LIBIIO_DEPENDENCIES += libaio
+LIBIIO_CONF_OPTS += -DWITH_IIOD_USBD=ON
+else
+LIBIIO_CONF_OPTS += -DWITH_IIOD_USBD=OFF
+endif
+
+# Avahi support in libiio requires avahi-client, which needs avahi-daemon and dbus
+ifeq ($(BR2_PACKAGE_AVAHI_DAEMON)$(BR2_PACKAGE_DBUS),yy)
 LIBIIO_DEPENDENCIES += avahi
 endif
 
 ifeq ($(BR2_PACKAGE_LIBIIO_BINDINGS_PYTHON),y)
+ifeq ($(BR2_PACKAGE_PYTHON),y)
 LIBIIO_DEPENDENCIES += python
+else ifeq ($(BR2_PACKAGE_PYTHON3),y)
+LIBIIO_DEPENDENCIES += python3
+endif
 LIBIIO_CONF_OPTS += -DPYTHON_BINDINGS=ON
 else
 LIBIIO_CONF_OPTS += -DPYTHON_BINDINGS=OFF
@@ -59,11 +73,11 @@ endif
 ifeq ($(BR2_PACKAGE_LIBIIO_BINDINGS_CSHARP),y)
 define LIBIIO_INSTALL_CSHARP_BINDINGS_TO_TARGET
 	rm $(TARGET_DIR)/usr/lib/cli/libiio-sharp-$(LIBIIO_VERSION)/libiio-sharp.dll.mdb
-	$(HOST_DIR)/usr/bin/gacutil -root $(TARGET_DIR)/usr/lib -i \
+	$(HOST_DIR)/bin/gacutil -root $(TARGET_DIR)/usr/lib -i \
 		$(TARGET_DIR)/usr/lib/cli/libiio-sharp-$(LIBIIO_VERSION)/libiio-sharp.dll
 endef
 define LIBIIO_INSTALL_CSHARP_BINDINGS_TO_STAGING
-	$(HOST_DIR)/usr/bin/gacutil -root $(STAGING_DIR)/usr/lib -i \
+	$(HOST_DIR)/bin/gacutil -root $(STAGING_DIR)/usr/lib -i \
 		$(STAGING_DIR)/usr/lib/cli/libiio-sharp-$(LIBIIO_VERSION)/libiio-sharp.dll
 endef
 LIBIIO_POST_INSTALL_TARGET_HOOKS += LIBIIO_INSTALL_CSHARP_BINDINGS_TO_TARGET

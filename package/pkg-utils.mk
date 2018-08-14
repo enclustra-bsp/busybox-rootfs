@@ -36,6 +36,7 @@ pkgname = $(lastword $(subst /, ,$(pkgdir)))
 # Define extractors for different archive suffixes
 INFLATE.bz2  = $(BZCAT)
 INFLATE.gz   = $(ZCAT)
+INFLATE.lz   = $(LZCAT)
 INFLATE.lzma = $(XZCAT)
 INFLATE.tbz  = $(BZCAT)
 INFLATE.tbz2 = $(BZCAT)
@@ -44,6 +45,13 @@ INFLATE.xz   = $(XZCAT)
 INFLATE.tar  = cat
 # suitable-extractor(filename): returns extractor based on suffix
 suitable-extractor = $(INFLATE$(suffix $(1)))
+
+# extractor-dependency(filename): returns extractor for 'filename' if the
+# extractor is a dependency. If we build the extractor return nothing.
+# $(firstword) is used here because the extractor can have arguments, like
+# ZCAT="gzip -d -c", and to check for the dependency we only want 'gzip'.
+extractor-dependency = $(firstword $(INFLATE$(filter-out \
+	$(EXTRACTOR_DEPENDENCY_PRECHECKED_EXTENSIONS),$(suffix $(1)))))
 
 # check-deprecated-variable -- throw an error on deprecated variables
 # example:
@@ -75,7 +83,15 @@ define legal-manifest # pkg, version, license, license-files, source, url, {HOST
 	echo '"$(1)","$(2)","$(3)","$(4)","$(5)","$(6)"' >>$(LEGAL_MANIFEST_CSV_$(7))
 endef
 
-define legal-license-file # pkg, filename, file-fullpath, {HOST|TARGET}
-	mkdir -p $(LICENSE_FILES_DIR_$(4))/$(1)/$(dir $(2)) && \
-	cp $(3) $(LICENSE_FILES_DIR_$(4))/$(1)/$(2)
+define legal-license-file # pkgname, pkgname-pkgver, pkgdir, filename, file-fullpath, {HOST|TARGET}
+	mkdir -p $(LICENSE_FILES_DIR_$(6))/$(2)/$(dir $(4)) && \
+	{ \
+		if [ -f $(3)/$($(PKG)_VERSION)/$(1).hash ]; then \
+			support/download/check-hash $(3)/$($(PKG)_VERSION)/$(1).hash $(5) $(4); \
+		else \
+			support/download/check-hash $(3)/$(1).hash $(5) $(4); \
+		fi; \
+		case $${?} in (0|3) ;; (*) exit 1;; esac; \
+	} && \
+	cp $(5) $(LICENSE_FILES_DIR_$(6))/$(2)/$(4)
 endef

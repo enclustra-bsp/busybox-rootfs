@@ -4,31 +4,27 @@
 #
 ################################################################################
 
-# When updating the version here, also update support/scripts/scancpan
-PERL_VERSION_MAJOR = 22
+# When updating the version here, also update utils/scancpan
+PERL_VERSION_MAJOR = 26
 PERL_VERSION = 5.$(PERL_VERSION_MAJOR).2
 PERL_SITE = http://www.cpan.org/src/5.0
-PERL_SOURCE = perl-$(PERL_VERSION).tar.bz2
-PERL_LICENSE = Artistic or GPLv1+
+PERL_SOURCE = perl-$(PERL_VERSION).tar.xz
+PERL_LICENSE = Artistic or GPL-1.0+
 PERL_LICENSE_FILES = Artistic Copying README
 PERL_INSTALL_STAGING = YES
 
-PERL_CROSS_VERSION = 1.0.2
-PERL_CROSS_BASE_VERSION = 5.$(PERL_VERSION_MAJOR).1
+PERL_CROSS_VERSION = 1.1.9
 # DO NOT refactor with the github helper (the result is not the same)
 PERL_CROSS_SITE = https://github.com/arsv/perl-cross/releases/download/$(PERL_CROSS_VERSION)
-PERL_CROSS_SOURCE = perl-$(PERL_CROSS_BASE_VERSION)-cross-$(PERL_CROSS_VERSION).tar.gz
+PERL_CROSS_SOURCE = perl-cross-$(PERL_CROSS_VERSION).tar.gz
 PERL_EXTRA_DOWNLOADS = $(PERL_CROSS_SITE)/$(PERL_CROSS_SOURCE)
-
-PERL_CROSS_OLD_POD = perl$(subst .,,$(PERL_CROSS_BASE_VERSION))delta.pod
-PERL_CROSS_NEW_POD = perl$(subst .,,$(PERL_VERSION))delta.pod
 
 # We use the perlcross hack to cross-compile perl. It should
 # be extracted over the perl sources, so we don't define that
 # as a separate package. Instead, it is downloaded and extracted
 # together with perl
 define PERL_CROSS_EXTRACT
-	$(call suitable-extractor,$(PERL_CROSS_SOURCE)) $(DL_DIR)/$(PERL_CROSS_SOURCE) | \
+	$(call suitable-extractor,$(PERL_CROSS_SOURCE)) $(PERL_DL_DIR)/$(PERL_CROSS_SOURCE) | \
 	$(TAR) --strip-components=1 -C $(@D) $(TAR_OPTIONS) -
 endef
 PERL_POST_EXTRACT_HOOKS += PERL_CROSS_EXTRACT
@@ -38,11 +34,6 @@ PERL_POST_EXTRACT_HOOKS += PERL_CROSS_EXTRACT
 # on newer host architectures, so we borrow the hook which updates them from the
 # autotools infrastructure.
 PERL_POST_PATCH_HOOKS += UPDATE_CONFIG_HOOK
-
-define PERL_CROSS_SET_POD
-	$(SED) s/$(PERL_CROSS_OLD_POD)/$(PERL_CROSS_NEW_POD)/g $(@D)/Makefile
-endef
-PERL_POST_PATCH_HOOKS += PERL_CROSS_SET_POD
 
 ifeq ($(BR2_PACKAGE_BERKELEYDB),y)
 PERL_DEPENDENCIES += berkeleydb
@@ -91,16 +82,16 @@ define PERL_BUILD_CMDS
 endef
 
 define PERL_INSTALL_STAGING_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) DESTDIR="$(STAGING_DIR)" install.perl
+	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) DESTDIR="$(STAGING_DIR)" install.perl install.sym
 endef
 
 define PERL_INSTALL_TARGET_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) DESTDIR="$(TARGET_DIR)" install.perl
+	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) DESTDIR="$(TARGET_DIR)" install.perl install.sym
 endef
 
 HOST_PERL_CONF_OPTS = \
 	-des \
-	-Dprefix="$(HOST_DIR)/usr" \
+	-Dprefix="$(HOST_DIR)" \
 	-Dcc="$(HOSTCC)"
 
 define HOST_PERL_CONFIGURE_CMDS

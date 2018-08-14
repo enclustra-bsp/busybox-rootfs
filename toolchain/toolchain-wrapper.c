@@ -22,12 +22,19 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
+#include <stdbool.h>
 
 #ifdef BR_CCACHE
 static char ccache_path[PATH_MAX];
 #endif
 static char path[PATH_MAX];
 static char sysroot[PATH_MAX];
+/* As would be defined by gcc:
+ *   https://gcc.gnu.org/onlinedocs/cpp/Standard-Predefined-Macros.html
+ * sizeof() on string literals includes the terminating \0. */
+static char _time_[sizeof("-D__TIME__=\"HH:MM:SS\"")];
+static char _date_[sizeof("-D__DATE__=\"MMM DD YYYY\"")];
 
 /**
  * GCC errors out with certain combinations of arguments (examples are
@@ -35,12 +42,15 @@ static char sysroot[PATH_MAX];
  * that we only pass the predefined one to the real compiler if the inverse
  * option isn't in the argument list.
  * This specifies the worst case number of extra arguments we might pass
- * Currently, we have:
+ * Currently, we may have:
  * 	-mfloat-abi=
  * 	-march=
  * 	-mcpu=
+ * 	-D__TIME__=
+ * 	-D__DATE__=
+ * 	-Wno-builtin-macro-redefined
  */
-#define EXCLUSIVE_ARGS	3
+#define EXCLUSIVE_ARGS	6
 
 static char *predef_args[] = {
 #ifdef BR_CCACHE
@@ -50,6 +60,9 @@ static char *predef_args[] = {
 	"--sysroot", sysroot,
 #ifdef BR_ABI
 	"-mabi=" BR_ABI,
+#endif
+#ifdef BR_NAN
+	"-mnan=" BR_NAN,
 #endif
 #ifdef BR_FPU
 	"-mfpu=" BR_FPU,
@@ -69,6 +82,9 @@ static char *predef_args[] = {
 #ifdef BR_NO_FUSED_MADD
 	"-mno-fused-madd",
 #endif
+#ifdef BR_FP_CONTRACT_OFF
+	"-ffp-contract=off",
+#endif
 #ifdef BR_BINFMT_FLAT
 	"-Wl,-elf2flt",
 #endif
@@ -83,23 +99,44 @@ static char *predef_args[] = {
 #endif
 };
 
-struct unsafe_opt_s {
-	const char *arg;
+/* A {string,length} tuple, to avoid computing strlen() on constants.
+ *  - str must be a \0-terminated string
+ *  - len does not account for the terminating '\0'
+ */
+struct str_len_s {
+	const char *str;
 	size_t     len;
+};
+
+/* Define a {string,length} tuple. Takes an unquoted constant string as
+ * parameter. sizeof() on a string literal includes the terminating \0,
+ * but we don't want to count it.
+ */
+#define STR_LEN(s) { #s, sizeof(#s)-1 }
+
+/* List of paths considered unsafe for cross-compilation.
+ *
+ * An unsafe path is one that points to a directory with libraries or
+ * headers for the build machine, which are not suitable for the target.
+ */
+static const struct str_len_s unsafe_paths[] = {
+	STR_LEN(/lib),
+	STR_LEN(/usr/include),
+	STR_LEN(/usr/lib),
+	STR_LEN(/usr/local/include),
+	STR_LEN(/usr/local/lib),
+	{ NULL, 0 },
 };
 
 /* Unsafe options are options that specify a potentialy unsafe path,
  * that will be checked by check_unsafe_path(), below.
- *
- * sizeof() on a string literal includes the terminating \0.
  */
-#define UNSAFE_OPT(o) { #o, sizeof(#o)-1 }
-static const struct unsafe_opt_s unsafe_opts[] = {
-	UNSAFE_OPT(-I),
-	UNSAFE_OPT(-idirafter),
-	UNSAFE_OPT(-iquote),
-	UNSAFE_OPT(-isystem),
-	UNSAFE_OPT(-L),
+static const struct str_len_s unsafe_opts[] = {
+	STR_LEN(-I),
+	STR_LEN(-idirafter),
+	STR_LEN(-iquote),
+	STR_LEN(-isystem),
+	STR_LEN(-L),
 	{ NULL, 0 },
 };
 
@@ -119,13 +156,10 @@ static void check_unsafe_path(const char *arg,
 			      int paranoid,
 			      int arg_has_path)
 {
-	char **c;
-	static char *unsafe_paths[] = {
-		"/lib", "/usr/include", "/usr/lib", "/usr/local/include", "/usr/local/lib", NULL,
-	};
+	const struct str_len_s *p;
 
-	for (c = unsafe_paths; *c != NULL; c++) {
-		if (strncmp(path, *c, strlen(*c)))
+	for (p=unsafe_paths; p->str; p++) {
+		if (strncmp(path, p->str, p->len))
 			continue;
 		fprintf(stderr,
 			"%s: %s: unsafe header/library path used in cross-compilation: '%s%s%s'\n",
@@ -137,6 +171,60 @@ static void check_unsafe_path(const char *arg,
 		if (paranoid)
 			exit(1);
 	}
+}
+
+/* Returns false if SOURCE_DATE_EPOCH was not defined in the environment.
+ *
+ * Returns true if SOURCE_DATE_EPOCH is in the environment and represent
+ * a valid timestamp, in which case the timestamp is formatted into the
+ * global variables _date_ and _time_.
+ *
+ * Aborts if SOURCE_DATE_EPOCH was set in the environment but did not
+ * contain a valid timestamp.
+ *
+ * Valid values are defined in the spec:
+ *     https://reproducible-builds.org/specs/source-date-epoch/
+ * but we further restrict them to be positive or null.
+ */
+bool parse_source_date_epoch_from_env(void)
+{
+	char *epoch_env, *endptr;
+	time_t epoch;
+	struct tm epoch_tm;
+
+	if ((epoch_env = getenv("SOURCE_DATE_EPOCH")) == NULL)
+		return false;
+	errno = 0;
+	epoch = (time_t) strtoll(epoch_env, &endptr, 10);
+	/* We just need to test if it is incorrect, but we do not
+	 * care why it is incorrect.
+	 */
+	if ((errno != 0) || !*epoch_env || *endptr || (epoch < 0)) {
+		fprintf(stderr, "%s: invalid SOURCE_DATE_EPOCH='%s'\n",
+			program_invocation_short_name,
+			epoch_env);
+		exit(1);
+	}
+	tzset(); /* For localtime_r(), below. */
+	if (localtime_r(&epoch, &epoch_tm) == NULL) {
+		fprintf(stderr, "%s: cannot parse SOURCE_DATE_EPOCH=%s\n",
+				program_invocation_short_name,
+				getenv("SOURCE_DATE_EPOCH"));
+		exit(1);
+	}
+	if (!strftime(_time_, sizeof(_time_), "-D__TIME__=\"%T\"", &epoch_tm)) {
+		fprintf(stderr, "%s: cannot set time from SOURCE_DATE_EPOCH=%s\n",
+				program_invocation_short_name,
+				getenv("SOURCE_DATE_EPOCH"));
+		exit(1);
+	}
+	if (!strftime(_date_, sizeof(_date_), "-D__DATE__=\"%b %e %Y\"", &epoch_tm)) {
+		fprintf(stderr, "%s: cannot set date from SOURCE_DATE_EPOCH=%s\n",
+				program_invocation_short_name,
+				getenv("SOURCE_DATE_EPOCH"));
+		exit(1);
+	}
+	return true;
 }
 
 int main(int argc, char **argv)
@@ -160,7 +248,7 @@ int main(int argc, char **argv)
 			perror(__FILE__ ": malloc");
 			return 2;
 		}
-		sprintf(relbasedir, "%s/../..", argv[0]);
+		sprintf(relbasedir, "%s/..", argv[0]);
 		absbasedir = realpath(relbasedir, NULL);
 	} else {
 		basename = progpath;
@@ -174,7 +262,7 @@ int main(int argc, char **argv)
 		for (i = ret; i > 0; i--) {
 			if (absbasedir[i] == '/') {
 				absbasedir[i] = '\0';
-				if (++count == 3)
+				if (++count == 2)
 					break;
 			}
 		}
@@ -190,14 +278,14 @@ int main(int argc, char **argv)
 #elif defined(BR_CROSS_PATH_ABS)
 	ret = snprintf(path, sizeof(path), BR_CROSS_PATH_ABS "/%s" BR_CROSS_PATH_SUFFIX, basename);
 #else
-	ret = snprintf(path, sizeof(path), "%s/usr/bin/%s" BR_CROSS_PATH_SUFFIX, absbasedir, basename);
+	ret = snprintf(path, sizeof(path), "%s/bin/%s" BR_CROSS_PATH_SUFFIX, absbasedir, basename);
 #endif
 	if (ret >= sizeof(path)) {
 		perror(__FILE__ ": overflow");
 		return 3;
 	}
 #ifdef BR_CCACHE
-	ret = snprintf(ccache_path, sizeof(ccache_path), "%s/usr/bin/ccache", absbasedir);
+	ret = snprintf(ccache_path, sizeof(ccache_path), "%s/bin/ccache", absbasedir);
 	if (ret >= sizeof(ccache_path)) {
 		perror(__FILE__ ": overflow");
 		return 3;
@@ -233,6 +321,20 @@ int main(int argc, char **argv)
 		*cur++ = "-mfloat-abi=" BR_FLOAT_ABI;
 #endif
 
+#ifdef BR_FP32_MODE
+	/* add fp32 mode if soft-float is not args or hard-float overrides soft-float */
+	int add_fp32_mode = 1;
+	for (i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "-msoft-float"))
+			add_fp32_mode = 0;
+		else if (!strcmp(argv[i], "-mhard-float"))
+			add_fp32_mode = 1;
+	}
+
+	if (add_fp32_mode == 1)
+		*cur++ = "-mfp" BR_FP32_MODE;
+#endif
+
 #if defined(BR_ARCH) || \
     defined(BR_CPU)
 	/* Add our -march/cpu flags, but only if none of
@@ -254,6 +356,13 @@ int main(int argc, char **argv)
 	}
 #endif /* ARCH || CPU */
 
+	if (parse_source_date_epoch_from_env()) {
+		*cur++ = _time_;
+		*cur++ = _date_;
+		/* This has existed since gcc-4.4.0. */
+		*cur++ = "-Wno-builtin-macro-redefined";
+	}
+
 	paranoid_wrapper = getenv("BR_COMPILER_PARANOID_UNSAFE_PATH");
 	if (paranoid_wrapper && strlen(paranoid_wrapper) > 0)
 		paranoid = 1;
@@ -262,10 +371,10 @@ int main(int argc, char **argv)
 
 	/* Check for unsafe library and header paths */
 	for (i = 1; i < argc; i++) {
-		const struct unsafe_opt_s *opt;
-		for (opt=unsafe_opts; opt->arg; opt++ ) {
+		const struct str_len_s *opt;
+		for (opt=unsafe_opts; opt->str; opt++ ) {
 			/* Skip any non-unsafe option. */
-			if (strncmp(argv[i], opt->arg, opt->len))
+			if (strncmp(argv[i], opt->str, opt->len))
 				continue;
 
 			/* Handle both cases:

@@ -6,7 +6,7 @@
 
 SPEEX_VERSION = 1.2rc1
 SPEEX_SITE = http://downloads.us.xiph.org/releases/speex
-SPEEX_LICENSE = BSD-3c
+SPEEX_LICENSE = BSD-3-Clause
 SPEEX_LICENSE_FILES = COPYING
 
 SPEEX_INSTALL_STAGING = YES
@@ -30,9 +30,5 @@ define SPEEX_LIBTOOL_FIXUP
 endef
 
 SPEEX_POST_CONFIGURE_HOOKS += SPEEX_LIBTOOL_FIXUP
-
-define SPEEX_BUILD_CMDS
-	$($(PKG)_MAKE_ENV) $(MAKE) $($(PKG)_MAKE_OPTS) -C $(@D)/$($(PKG)_SUBDIR)
-endef
 
 $(eval $(autotools-package))

@@ -11,6 +11,9 @@
 
 # Copyright 2003 Key Research, Inc.
 
+# Create needed directories
+mkdir -p /var/lock/subsys
+
 # Source function library.
 if [ -f /etc/init.d/functions ]; then
 	. /etc/init.d/functions
@@ -28,8 +31,6 @@ elif [ ! -f /etc/network/interfaces ]; then
 	# No network support
 	exit 0
 fi
-
-[ -x /sbin/netplugd ] || exit 0
 
 if [ -f /etc/sysconfig/netplugd ]; then
     . /etc/sysconfig/netplugd

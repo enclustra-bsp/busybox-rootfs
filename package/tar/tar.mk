@@ -10,7 +10,7 @@ TAR_SITE = $(BR2_GNU_MIRROR)/tar
 # busybox installs in /bin, so we need tar to install as well in /bin
 # so that it overrides the Busybox symlinks.
 TAR_CONF_OPTS = --exec-prefix=/
-TAR_LICENSE = GPLv3+
+TAR_LICENSE = GPL-3.0+
 TAR_LICENSE_FILES = COPYING
 
 # Prefer full-blown tar over buybox's version
@@ -40,8 +40,16 @@ HOST_TAR_SOURCE = tar-$(TAR_VERSION).cpio.gz
 define HOST_TAR_EXTRACT_CMDS
 	mkdir -p $(@D)
 	cd $(@D) && \
-		$(call suitable-extractor,$(HOST_TAR_SOURCE)) $(DL_DIR)/$(HOST_TAR_SOURCE) | cpio -i --preserve-modification-time
+		$(call suitable-extractor,$(HOST_TAR_SOURCE)) $(TAR_DL_DIR)/$(HOST_TAR_SOURCE) | cpio -i --preserve-modification-time
 	mv $(@D)/tar-$(TAR_VERSION)/* $(@D)
 	rmdir $(@D)/tar-$(TAR_VERSION)
 endef
+
+HOST_TAR_CONF_OPTS = --without-selinux
+
+# we are built before ccache
+HOST_TAR_CONF_ENV = \
+	CC="$(HOSTCC_NOCCACHE)" \
+	CXX="$(HOSTCXX_NOCCACHE)"
+
 $(eval $(host-autotools-package))
