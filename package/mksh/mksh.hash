@@ -1,4 +1,4 @@
 # From http://www.mirbsd.org/mksh.htm#build
-md5	43fc3e32963cc1795a299bcec531d770	mksh-R53a.tgz
+md5 718c44251b52c48e7312903273e263f4  mksh-R55.tgz
 # Calculated based on the hash above
-sha256	3bb2453c8cb65abbda24f9bdd8b8371e30a6e1c2f7a0d5474a3efae438639635	mksh-R53a.tgz
+sha256 ced42cb4a181d97d52d98009eed753bd553f7c34e6991d404f9a8dcb45c35a57  mksh-R55.tgz

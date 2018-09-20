@@ -1,6 +1,20 @@
+################################################################################
+#
+# qt5
+#
+################################################################################
+
+ifeq ($(BR2_PACKAGE_QT5_VERSION_LATEST),y)
+QT5_VERSION_MAJOR = 5.10
+QT5_VERSION = $(QT5_VERSION_MAJOR).1
+QT5_SOURCE_TARBALL_PREFIX = everywhere-src
+else
 QT5_VERSION_MAJOR = 5.6
-QT5_VERSION = $(QT5_VERSION_MAJOR).2
-QT5_SITE = http://download.qt.io/official_releases/qt/$(QT5_VERSION_MAJOR)/$(QT5_VERSION)/submodules
+QT5_VERSION = $(QT5_VERSION_MAJOR).3
+QT5_SOURCE_TARBALL_PREFIX = opensource-src
+endif
+QT5_SITE = https://download.qt.io/official_releases/qt/$(QT5_VERSION_MAJOR)/$(QT5_VERSION)/submodules
+
 include $(sort $(wildcard package/qt5/*/*.mk))
 
 define QT5_LA_PRL_FILES_FIXUP
@@ -19,4 +33,4 @@ define QT5_LA_PRL_FILES_FIXUP
 endef
 
 # Variable for other Qt applications to use
-QT5_QMAKE = $(HOST_DIR)/usr/bin/qmake -spec devices/linux-buildroot-g++
+QT5_QMAKE = $(HOST_DIR)/bin/qmake -spec devices/linux-buildroot-g++

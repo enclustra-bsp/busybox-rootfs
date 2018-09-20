@@ -4,21 +4,25 @@
 #
 ################################################################################
 
-POPPLER_VERSION = 0.48.0
+POPPLER_VERSION = 0.59.0
 POPPLER_SOURCE = poppler-$(POPPLER_VERSION).tar.xz
 POPPLER_SITE = http://poppler.freedesktop.org
 POPPLER_DEPENDENCIES = fontconfig host-pkgconf
-POPPLER_LICENSE = GPLv2+
+POPPLER_LICENSE = GPL-2.0+
 POPPLER_LICENSE_FILES = COPYING
 POPPLER_INSTALL_STAGING = YES
 POPPLER_CONF_OPTS = --with-font-configuration=fontconfig \
 	--enable-xpdf-headers
 
+ifeq ($(BR2_TOOLCHAIN_HAS_LIBATOMIC),y)
+POPPLER_CONF_ENV += LDFLAGS="$(TARGET_LDFLAGS) -latomic"
+endif
+
 ifeq ($(BR2_PACKAGE_CAIRO),y)
 POPPLER_CONF_OPTS += --enable-cairo-output
 POPPLER_DEPENDENCIES += cairo
 else
-POPLER_CONF_OPTS += --disable-cairo-output
+POPPLER_CONF_OPTS += --disable-cairo-output
 endif
 
 ifeq ($(BR2_PACKAGE_LCMS2),y)
@@ -46,10 +50,10 @@ POPPLER_CONF_OPTS += --disable-libtiff
 endif
 
 ifeq ($(BR2_PACKAGE_JPEG),y)
-POPPLER_CONF_OPTS += --enable-libjpeg
+POPPLER_CONF_OPTS += --enable-dctdecoder=libjpeg
 POPPLER_DEPENDENCIES += jpeg
 else
-POPPLER_CONF_OPTS += --disable-libjpeg
+POPPLER_CONF_OPTS += --enable-dctdecoder=none
 endif
 
 ifeq ($(BR2_PACKAGE_LIBPNG),y)
@@ -66,7 +70,7 @@ else
 POPPLER_CONF_OPTS += --disable-zlib
 endif
 
-ifeq ($(BR2_PACKAGE_POPPLER_LIBCURL),y)
+ifeq ($(BR2_PACKAGE_LIBCURL),y)
 POPPLER_CONF_OPTS += --enable-libcurl
 POPPLER_DEPENDENCIES += libcurl
 else
@@ -87,9 +91,20 @@ else
 POPPLER_CONF_OPTS += --disable-poppler-qt4
 endif
 
+ifeq ($(BR2_PACKAGE_POPPLER_QT5),y)
+POPPLER_DEPENDENCIES += qt5base
+POPPLER_CONF_OPTS += --enable-poppler-qt5
+# since Qt5.7.x c++11 is needed (LTS Qt5.6.x is the last one without this requirement)
+ifeq ($(BR2_PACKAGE_QT5_VERSION_LATEST),y)
+POPPLER_CONF_ENV += CXXFLAGS="$(TARGET_CXXFLAGS) -std=c++11"
+endif
+else
+POPPLER_CONF_OPTS += --disable-poppler-qt5
+endif
+
 ifeq ($(BR2_PACKAGE_OPENJPEG),y)
 POPPLER_DEPENDENCIES += openjpeg
-POPPLER_CONF_OPTS += --enable-libopenjpeg
+POPPLER_CONF_OPTS += --enable-libopenjpeg=openjpeg2
 else
 POPPLER_CONF_OPTS += --enable-libopenjpeg=none
 endif

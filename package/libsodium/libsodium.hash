@@ -1,2 +1,4 @@
 # Locally calculated after checking pgp signature
-sha256	c0f191d2527852641e0a996b7b106d2e04cbc76ea50731b2d0babd3409301926	libsodium-1.0.8.tar.gz
+# https://download.libsodium.org/libsodium/releases/libsodium-1.0.16.tar.gz.sig
+sha256 eeadc7e1e1bcef09680fb4837d448fbdf57224978f865ac1c16745868fbd0533  libsodium-1.0.16.tar.gz
+sha256 6faf327c97dca6da69acefc6d3969d7bffb70a24f0707874870fdcfd6b0acf58  LICENSE

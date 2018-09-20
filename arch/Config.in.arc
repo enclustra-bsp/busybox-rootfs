@@ -1,7 +1,7 @@
 choice
 	prompt "Target CPU"
-	depends on BR2_arc
 	default BR2_arc770d
+	depends on BR2_arc
 	help
 	    Specific CPU to use
 
@@ -37,6 +37,10 @@ config BR2_GCC_TARGET_CPU
 	default "arc700" if BR2_arc750d
 	default "arc700" if BR2_arc770d
 	default "archs"	 if BR2_archs38
+
+config BR2_READELF_ARCH_NAME
+	default "ARCompact"	if BR2_arc750d || BR2_arc770d
+	default "ARCv2"		if BR2_archs38
 
 choice
 	prompt "MMU Page Size"

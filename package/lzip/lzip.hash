@@ -1,2 +1,4 @@
-# Locally calculated after checking pgp signature
-sha256	7cd3fcda68fc9900efcf7784313e3bdd1303fef1a0546db9723f5e5564dd05b6	lzip-1.15.tar.gz
+# From http://lists.nongnu.org/archive/html/lzip-bug/2018-02/msg00006.html
+sha256 c93b81a5a7788ef5812423d311345ba5d3bd4f5ebf1f693911e3a13553c1290c lzip-1.20.tar.gz
+# Locally calculated
+sha256 3d77c1a58fbde5ddba612d1fe09965e20a3804953eca12e8c1892298bb8a5eef COPYING

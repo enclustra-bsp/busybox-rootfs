@@ -1,12 +1,10 @@
-comment "zeromq needs a toolchain w/ C++, wchar, threads"
-	depends on !(BR2_INSTALL_LIBSTDCPP && BR2_USE_WCHAR && \
-		BR2_TOOLCHAIN_HAS_THREADS)
+comment "zeromq needs a toolchain w/ C++, NPTL"
+	depends on !(BR2_INSTALL_LIBSTDCPP && BR2_TOOLCHAIN_HAS_THREADS_NPTL)
 
 config BR2_PACKAGE_ZEROMQ
 	bool "zeromq"
 	depends on BR2_INSTALL_LIBSTDCPP
-	depends on BR2_USE_WCHAR # util-linux
-	depends on BR2_TOOLCHAIN_HAS_THREADS
+	depends on BR2_TOOLCHAIN_HAS_THREADS_NPTL
 	select BR2_PACKAGE_UTIL_LINUX
 	select BR2_PACKAGE_UTIL_LINUX_LIBUUID
 	help
@@ -38,14 +36,20 @@ config BR2_PACKAGE_ZEROMQ_NORM
 	  Add support for NACK-Oriented Reliable Multicast (RFC 5740)
 	  protocol.
 
+comment "PGM/EPGM support needs a toolchain w/ wchar"
+	depends on BR2_TOOLCHAIN_HAS_SYNC_2
+	depends on BR2_TOOLCHAIN_HAS_SYNC_4
+	depends on !BR2_USE_WCHAR
+
 config BR2_PACKAGE_ZEROMQ_PGM
 	bool "PGM/EPGM support"
 	depends on BR2_TOOLCHAIN_HAS_SYNC_2
 	depends on BR2_TOOLCHAIN_HAS_SYNC_4
+	depends on BR2_USE_WCHAR # openpgm
 	select BR2_PACKAGE_OPENPGM
 	help
-	  Add support for Pragmatic General Multicast protocol (RFC 3208)
-	  implemented either over raw IP packets or UDP datagrams
-	  (encapsulated PGM).
+	  Add support for Pragmatic General Multicast protocol (RFC
+	  3208) implemented either over raw IP packets or UDP
+	  datagrams (encapsulated PGM).
 
 endif

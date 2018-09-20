@@ -13,16 +13,16 @@ if BR2_PACKAGE_XEN
 config BR2_PACKAGE_XEN_HYPERVISOR
 	bool "Xen hypervisor"
 	help
-	  The Xen binaries are avaliable in /usr/lib/xen/
-	  See http://wiki.xenproject.org/wiki/Getting_Started for using the
-	  Xen hypervisor.
+	  The Xen binaries are avaliable in /usr/lib/xen/ See
+	  http://wiki.xenproject.org/wiki/Getting_Started for using
+	  the Xen hypervisor.
 
 config BR2_PACKAGE_XEN_TOOLS
 	bool "Xen tools"
 	depends on !BR2_STATIC_LIBS # dtc (libfdt)
 	depends on BR2_PACKAGE_LIBAIO_ARCH_SUPPORTS
 	depends on BR2_TOOLCHAIN_HAS_THREADS # libglib2
-	depends on BR2_USE_WCHAR # libglib2, util-linux
+	depends on BR2_USE_WCHAR # libglib2
 	select BR2_PACKAGE_DTC
 	select BR2_PACKAGE_LIBAIO
 	select BR2_PACKAGE_LIBGLIB2

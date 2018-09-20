@@ -1,6 +1,11 @@
 config BR2_PACKAGE_PHP
 	bool "php"
+	# PHP uses -export-dynamic, which breaks with elf2flt with a
+	# message like "ld.real: section .junk LMA [...,...] overlaps
+	# section .text LMA [...,...]"
+	depends on !BR2_BINFMT_FLAT
 	select BR2_PACKAGE_PHP_SAPI_CGI if \
+	       !BR2_PACKAGE_PHP_SAPI_APACHE && \
 	       !BR2_PACKAGE_PHP_SAPI_CLI && \
 	       !BR2_PACKAGE_PHP_SAPI_FPM &&  \
 	       BR2_USE_MMU
@@ -13,6 +18,12 @@ config BR2_PACKAGE_PHP
 	  http://www.php.net
 
 if BR2_PACKAGE_PHP
+
+config BR2_PACKAGE_PHP_SAPI_APACHE
+	bool "Apache interface"
+	depends on BR2_PACKAGE_APACHE
+	help
+	  Apache module
 
 config BR2_PACKAGE_PHP_SAPI_CGI
 	bool "CGI interface"
@@ -29,6 +40,8 @@ config BR2_PACKAGE_PHP_SAPI_CLI
 config BR2_PACKAGE_PHP_SAPI_FPM
 	bool "FPM interface"
 	depends on BR2_USE_MMU
+	# "Sparc v8 and predecessors are not and will not be supported"
+	depends on !BR2_sparc
 	help
 	  PHP-FPM (FastCGI Process Manager)
 
