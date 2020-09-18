@@ -4,19 +4,18 @@
 #
 ################################################################################
 
-QEMU_VERSION = 2.10.2
+QEMU_VERSION = 4.2.0
 QEMU_SOURCE = qemu-$(QEMU_VERSION).tar.xz
 QEMU_SITE = http://download.qemu.org
 QEMU_LICENSE = GPL-2.0, LGPL-2.1, MIT, BSD-3-Clause, BSD-2-Clause, Others/BSD-1c
 QEMU_LICENSE_FILES = COPYING COPYING.LIB
-# NOTE: there is no top-level license file for non-(L)GPL licenses;
+# NOTE: there is no top-level license file for non-(L)GPL licenses;
 #       the non-(L)GPL license texts are specified in the affected
 #       individual source files.
 
 #-------------------------------------------------------------
 # Target-qemu
-
-QEMU_DEPENDENCIES = host-pkgconf host-python libglib2 zlib pixman
+QEMU_DEPENDENCIES = host-pkgconf libglib2 zlib pixman host-python3
 
 # Need the LIBS variable because librt and libm are
 # not automatically pulled. :-(
@@ -24,10 +23,7 @@ QEMU_LIBS = -lrt -lm
 
 QEMU_OPTS =
 
-QEMU_VARS = \
-	LIBTOOL=$(HOST_DIR)/bin/libtool \
-	PYTHON=$(HOST_DIR)/bin/python2 \
-	PYTHONPATH=$(TARGET_DIR)/usr/lib/python$(PYTHON_VERSION_MAJOR)/site-packages
+QEMU_VARS = LIBTOOL=$(HOST_DIR)/bin/libtool
 
 # If we want to specify only a subset of targets, we must still enable all
 # of them, so that QEMU properly builds its list of default targets, from
@@ -55,10 +51,15 @@ endif
 
 endif
 
+# There is no "--enable-slirp"
+ifeq ($(BR2_PACKAGE_QEMU_SLIRP),)
+QEMU_OPTS += --disable-slirp
+endif
+
 ifeq ($(BR2_PACKAGE_QEMU_SDL),y)
 QEMU_OPTS += --enable-sdl
-QEMU_DEPENDENCIES += sdl
-QEMU_VARS += SDL_CONFIG=$(BR2_STAGING_DIR)/usr/bin/sdl-config
+QEMU_DEPENDENCIES += sdl2
+QEMU_VARS += SDL2_CONFIG=$(BR2_STAGING_DIR)/usr/bin/sdl2-config
 else
 QEMU_OPTS += --disable-sdl
 endif
@@ -76,17 +77,46 @@ else
 QEMU_OPTS += --disable-tools
 endif
 
-ifeq ($(BR2_PACKAGE_LIBSSH2),y)
-QEMU_OPTS += --enable-libssh2
-QEMU_DEPENDENCIES += libssh2
+ifeq ($(BR2_PACKAGE_LIBSECCOMP),y)
+QEMU_OPTS += --enable-seccomp
+QEMU_DEPENDENCIES += libseccomp
 else
-QEMU_OPTS += --disable-libssh2
+QEMU_OPTS += --disable-seccomp
+endif
+
+ifeq ($(BR2_PACKAGE_LIBSSH),y)
+QEMU_OPTS += --enable-libssh
+QEMU_DEPENDENCIES += libssh
+else
+QEMU_OPTS += --disable-libssh
+endif
+
+ifeq ($(BR2_PACKAGE_LIBUSB),y)
+QEMU_OPTS += --enable-libusb
+QEMU_DEPENDENCIES += libusb
+else
+QEMU_OPTS += --disable-libusb
+endif
+
+ifeq ($(BR2_PACKAGE_NETTLE),y)
+QEMU_OPTS += --enable-nettle
+QEMU_DEPENDENCIES += nettle
+else
+QEMU_OPTS += --disable-nettle
+endif
+
+ifeq ($(BR2_PACKAGE_NUMACTL),y)
+QEMU_OPTS += --enable-numa
+QEMU_DEPENDENCIES += numactl
+else
+QEMU_OPTS += --disable-numa
 endif
 
 # Override CPP, as it expects to be able to call it like it'd
 # call the compiler.
 define QEMU_CONFIGURE_CMDS
-	( cd $(@D); \
+	unset TARGET_DIR; \
+	cd $(@D); \
 		LIBS='$(QEMU_LIBS)' \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(TARGET_CONFIGURE_ARGS) \
@@ -95,14 +125,13 @@ define QEMU_CONFIGURE_CMDS
 		./configure \
 			--prefix=/usr \
 			--cross-prefix=$(TARGET_CROSS) \
-			--with-system-pixman \
 			--audio-drv-list= \
+			--python=$(HOST_DIR)/bin/python3 \
 			--enable-kvm \
 			--enable-attr \
 			--enable-vhost-net \
 			--disable-bsd-user \
 			--disable-xen \
-			--disable-slirp \
 			--disable-vnc \
 			--disable-virtfs \
 			--disable-brlapi \
@@ -118,17 +147,28 @@ define QEMU_CONFIGURE_CMDS
 			--disable-libiscsi \
 			--disable-usb-redir \
 			--disable-strip \
-			--disable-seccomp \
 			--disable-sparse \
-			$(QEMU_OPTS) \
-	)
+			--disable-mpath \
+			--disable-sanitizers \
+			--disable-hvf \
+			--disable-whpx \
+			--disable-malloc-trim \
+			--disable-membarrier \
+			--disable-vhost-crypto \
+			--disable-libxml2 \
+			--disable-capstone \
+			--disable-git-update \
+			--disable-opengl \
+			$(QEMU_OPTS)
 endef
 
 define QEMU_BUILD_CMDS
+	unset TARGET_DIR; \
 	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D)
 endef
 
 define QEMU_INSTALL_TARGET_CMDS
+	unset TARGET_DIR; \
 	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) $(QEMU_MAKE_ENV) DESTDIR=$(TARGET_DIR) install
 endef
 
@@ -137,7 +177,7 @@ $(eval $(generic-package))
 #-------------------------------------------------------------
 # Host-qemu
 
-HOST_QEMU_DEPENDENCIES = host-pkgconf host-python host-zlib host-libglib2 host-pixman
+HOST_QEMU_DEPENDENCIES = host-pkgconf host-zlib host-libglib2 host-pixman host-python3
 
 #       BR ARCH         qemu
 #       -------         ----
@@ -153,6 +193,8 @@ HOST_QEMU_DEPENDENCIES = host-pkgconf host-python host-zlib host-libglib2 host-p
 #       mipsel          mipsel
 #       mips64          mips64
 #       mips64el        mips64el
+#       nios2           nios2
+#       or1k            or1k
 #       powerpc         ppc
 #       powerpc64       ppc64
 #       powerpc64le     ppc64 (system) / ppc64le (usermode)
@@ -161,8 +203,9 @@ HOST_QEMU_DEPENDENCIES = host-pkgconf host-python host-zlib host-libglib2 host-p
 #       sh4eb           sh4eb
 #       sh4a            sh4
 #       sh4aeb          sh4eb
-#       sh64            not supported
 #       sparc           sparc
+#       sparc64         sparc64
+#       xtensa          xtensa
 
 HOST_QEMU_ARCH = $(ARCH)
 ifeq ($(HOST_QEMU_ARCH),i486)
@@ -192,9 +235,12 @@ HOST_QEMU_ARCH = sh4eb
 endif
 HOST_QEMU_SYS_ARCH ?= $(HOST_QEMU_ARCH)
 
+HOST_QEMU_CFLAGS = $(HOST_CFLAGS)
+
 ifeq ($(BR2_PACKAGE_HOST_QEMU_SYSTEM_MODE),y)
 HOST_QEMU_TARGETS += $(HOST_QEMU_SYS_ARCH)-softmmu
 HOST_QEMU_OPTS += --enable-system --enable-fdt
+HOST_QEMU_CFLAGS += -I$(HOST_DIR)/include/libfdt
 HOST_QEMU_DEPENDENCIES += host-dtc
 else
 HOST_QEMU_OPTS += --disable-system
@@ -209,28 +255,6 @@ ifneq ($(HOST_QEMU_HOST_SYSTEM_TYPE),Linux)
 $(error "qemu-user can only be used on Linux hosts")
 endif
 
-# kernel version as major*256 + minor
-HOST_QEMU_HOST_SYSTEM_VERSION = $(shell uname -r | awk -F. '{ print $$1 * 256 + $$2 }')
-HOST_QEMU_TARGET_SYSTEM_VERSION = $(shell echo $(BR2_TOOLCHAIN_HEADERS_AT_LEAST) | awk -F. '{ print $$1 * 256 + $$2 }')
-HOST_QEMU_COMPARE_VERSION = $(shell test $(HOST_QEMU_HOST_SYSTEM_VERSION) -ge $(HOST_QEMU_TARGET_SYSTEM_VERSION) && echo OK)
-
-#
-# The principle of qemu-user is that it emulates the instructions of
-# the target architecture when running the binary, and then when this
-# binary does a system call, it converts this system call into a
-# system call on the host machine. This mechanism makes an assumption:
-# that the target binary will not do system calls that do not exist on
-# the host. This basically requires that the target binary should be
-# built with kernel headers that are older or the same as the kernel
-# version running on the host machine.
-#
-
-ifeq ($(BR_BUILDING),y)
-ifneq ($(HOST_QEMU_COMPARE_VERSION),OK)
-$(error "Refusing to build qemu-user: target Linux version newer than host's.")
-endif
-endif # BR_BUILDING
-
 else # BR2_PACKAGE_HOST_QEMU_LINUX_USER_MODE
 HOST_QEMU_OPTS += --disable-linux-user
 endif # BR2_PACKAGE_HOST_QEMU_LINUX_USER_MODE
@@ -240,9 +264,24 @@ HOST_QEMU_OPTS += --enable-vde
 HOST_QEMU_DEPENDENCIES += host-vde2
 endif
 
+ifeq ($(BR2_PACKAGE_HOST_QEMU_VIRTFS),y)
+HOST_QEMU_OPTS += --enable-virtfs
+HOST_QEMU_DEPENDENCIES += host-libcap
+else
+HOST_QEMU_OPTS += --disable-virtfs
+endif
+
+ifeq ($(BR2_PACKAGE_HOST_QEMU_USB),y)
+HOST_QEMU_OPTS += --enable-libusb
+HOST_QEMU_DEPENDENCIES += host-libusb
+else
+HOST_QEMU_OPTS += --disable-libusb
+endif
+
 # Override CPP, as it expects to be able to call it like it'd
 # call the compiler.
 define HOST_QEMU_CONFIGURE_CMDS
+	unset TARGET_DIR; \
 	cd $(@D); $(HOST_CONFIGURE_OPTS) CPP="$(HOSTCC) -E" \
 		./configure \
 		--target-list="$(HOST_QEMU_TARGETS)" \
@@ -250,17 +289,26 @@ define HOST_QEMU_CONFIGURE_CMDS
 		--interp-prefix=$(STAGING_DIR) \
 		--cc="$(HOSTCC)" \
 		--host-cc="$(HOSTCC)" \
-		--python=$(HOST_DIR)/bin/python2 \
-		--extra-cflags="$(HOST_CFLAGS)" \
+		--extra-cflags="$(HOST_QEMU_CFLAGS)" \
 		--extra-ldflags="$(HOST_LDFLAGS)" \
+		--python=$(HOST_DIR)/bin/python3 \
+		--disable-bzip2 \
+		--disable-curl \
+		--disable-libssh \
+		--disable-sdl \
+		--disable-vnc-jpeg \
+		--disable-vnc-png \
+		--disable-vnc-sasl \
 		$(HOST_QEMU_OPTS)
 endef
 
 define HOST_QEMU_BUILD_CMDS
+	unset TARGET_DIR; \
 	$(HOST_MAKE_ENV) $(MAKE) -C $(@D)
 endef
 
 define HOST_QEMU_INSTALL_CMDS
+	unset TARGET_DIR; \
 	$(HOST_MAKE_ENV) $(MAKE) -C $(@D) install
 endef
 

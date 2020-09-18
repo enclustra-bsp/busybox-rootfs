@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-AUTOMAKE_VERSION = 1.15
+AUTOMAKE_VERSION = 1.15.1
 AUTOMAKE_SOURCE = automake-$(AUTOMAKE_VERSION).tar.xz
 AUTOMAKE_SITE = $(BR2_GNU_MIRROR)/automake
 AUTOMAKE_LICENSE = GPL-2.0+
@@ -24,12 +24,6 @@ define HOST_AUTOMAKE_MAKE_ACLOCAL
 	mkdir -p $(ACLOCAL_DIR)
 endef
 
-# ensure the sources are bootstrapped
-define HOST_AUTOMAKE_BOOTSTRAP
-	(cd $(BUILD_DIR)/host-automake-$(AUTOMAKE_VERSION) && /bin/sh ./bootstrap.sh)
-endef
-
-HOST_AUTOMAKE_PRE_CONFIGURE_HOOKS += HOST_AUTOMAKE_BOOTSTRAP
 HOST_AUTOMAKE_POST_INSTALL_HOOKS += GTK_DOC_M4_INSTALL
 HOST_AUTOMAKE_POST_INSTALL_HOOKS += HOST_AUTOMAKE_MAKE_ACLOCAL
 
@@ -38,4 +32,6 @@ $(eval $(host-autotools-package))
 # variables used by other packages
 AUTOMAKE = $(HOST_DIR)/bin/automake
 ACLOCAL_DIR = $(STAGING_DIR)/usr/share/aclocal
-ACLOCAL = $(HOST_DIR)/bin/aclocal -I $(ACLOCAL_DIR)
+ACLOCAL = $(HOST_DIR)/bin/aclocal
+ACLOCAL_PATH = $(ACLOCAL_DIR):$(ACLOCAL_HOST_DIR)
+export ACLOCAL_PATH

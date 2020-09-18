@@ -11,7 +11,5 @@ LIBUPNP_CONF_ENV = ac_cv_lib_compat_ftime=no
 LIBUPNP_INSTALL_STAGING = YES
 LIBUPNP_LICENSE = BSD-3-Clause
 LIBUPNP_LICENSE_FILES = LICENSE
-# configure.ac patched by 0001-Don-t-allow-unhandled-POSTs-to-write-to-the-filesyst.patch
-LIBUPNP_AUTORECONF = YES
 
 $(eval $(autotools-package))

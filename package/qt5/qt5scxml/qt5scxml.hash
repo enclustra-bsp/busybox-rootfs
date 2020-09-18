@@ -1,5 +1,5 @@
-# Hash from: https://download.qt.io/official_releases/qt/5.10/5.10.1/submodules/qtscxml-everywhere-src-5.10.1.tar.xz.mirrorlist
-sha256 0b42d201e4f96af1c404a61f01da6726bab9bfba4e280cc4a82c717f0db26103  qtscxml-everywhere-src-5.10.1.tar.xz
+# Hash from: https://download.qt.io/official_releases/qt/5.14/5.14.2/submodules/qtscxml-everywhere-src-5.14.2.tar.xz.sha256
+sha256  030cea352a56074f577200f967ef37c959b2767127de61f766f59b0d99763790  qtscxml-everywhere-src-5.14.2.tar.xz
 
 # Hashes for license files:
 

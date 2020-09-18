@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-UHUBCTL_VERSION = 047bb1e392efd3e0ea5d5caf351e20761e12cd44
-UHUBCTL_SITE = $(call github,mvp,uhubctl,$(UHUBCTL_VERSION))
+UHUBCTL_VERSION = 2.1.0
+UHUBCTL_SITE = $(call github,mvp,uhubctl,v$(UHUBCTL_VERSION))
 UHUBCTL_LICENSE = GPL-2.0
 UHUBCTL_LICENSE_FILES = LICENSE
 UHUBCTL_DEPENDENCIES = libusb

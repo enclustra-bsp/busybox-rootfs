@@ -10,6 +10,10 @@ TRIGGERHAPPY_LICENSE = GPL-3.0+
 TRIGGERHAPPY_LICENSE_FILES = COPYING
 TRIGGERHAPPY_DEPENDENCIES = host-pkgconf
 
+ifeq ($(BR2_PACKAGE_SYSTEMD),y)
+TRIGGERHAPPY_DEPENDENCIES += systemd
+endif
+
 define TRIGGERHAPPY_BUILD_CMDS
 	$(MAKE) $(TARGET_CONFIGURE_OPTS) PKGCONFIG="$(PKG_CONFIG_HOST_BINARY)" \
 		-C $(@D) thd th-cmd
@@ -37,9 +41,6 @@ endef
 define TRIGGERHAPPY_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 644 package/triggerhappy/triggerhappy.service \
 		$(TARGET_DIR)/usr/lib/systemd/system/triggerhappy.service
-	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
-	ln -sf ../../../../usr/lib/systemd/system/triggerhappy.service \
-		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/triggerhappy.service
 endef
 
 $(eval $(generic-package))

@@ -4,17 +4,14 @@
 #
 ################################################################################
 
-RPI_BT_FIRMWARE_VERSION = 18d7c931aff0a8a78360b9b9eaeb15d1224fb907
+RPI_BT_FIRMWARE_VERSION = d4f7087ecbc8eff9cb64a4650765697157821d64
 RPI_BT_FIRMWARE_SITE = $(call github,LibreELEC,brcmfmac_sdio-firmware-rpi,$(RPI_BT_FIRMWARE_VERSION))
 RPI_BT_FIRMWARE_LICENSE = PROPRIETARY
 RPI_BT_FIRMWARE_LICENSE_FILES = LICENCE.broadcom_bcm43xx
 
-RPI_BT_FIRMWARE_FILES = brcm/BCM43430A1.hcd BCM4345C0.hcd
-
 define RPI_BT_FIRMWARE_INSTALL_TARGET_CMDS
-	$(foreach file,$(RPI_BT_FIRMWARE_FILES),\
-		$(INSTALL) -D -m 0644 $(@D)/firmware/$(file) $(TARGET_DIR)/lib/firmware/$(notdir $(file))
-	)
+	$(INSTALL) -d $(TARGET_DIR)/lib/firmware/brcm
+	$(INSTALL) -m 0644 $(@D)/firmware/brcm/*.hcd $(TARGET_DIR)/lib/firmware/brcm
 endef
 
 $(eval $(generic-package))
