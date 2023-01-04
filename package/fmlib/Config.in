@@ -13,7 +13,7 @@ config BR2_PACKAGE_FMLIB
 	  configure driver parameters and PCD (parse - classify -
 	  distribute) rules.
 
-	  https://github.com/nxp-qoriq/fmlib
+	  http://git.freescale.com/git/cgit.cgi/ppc/sdk/fmlib.git/tree/README
 
 if BR2_PACKAGE_FMLIB
 choice
