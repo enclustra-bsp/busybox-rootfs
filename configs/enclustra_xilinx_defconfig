@@ -5,7 +5,6 @@ BR2_ARM_FPU_NEON=y
 BR2_BACKUP_SITE=""
 BR2_TOOLCHAIN_BUILDROOT_GLIBC=y
 BR2_KERNEL_HEADERS_5_4=y
-BR2_BACKUP_SITE="http://www.enclustra.com/binaries/enclustra-bsp/busybox-rootfs"
 BR2_TARGET_GENERIC_ROOT_PASSWD="root"
 BR2_TARGET_GENERIC_GETTY_PORT="ttyPS0"
 BR2_ROOTFS_POST_BUILD_SCRIPT="board/enclustra/ebe_overlays.sh"
