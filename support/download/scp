@@ -8,8 +8,7 @@ set -e
 # Options:
 #   -q          Be quiet.
 #   -o FILE     Copy to local file FILE.
-#   -f FILE     Copy from remote file FILE.
-#   -u URI      Download file at URI.
+#   -u FILE     Copy from remote file FILE.
 #
 # Environment:
 #   SCP       : the scp command to call
@@ -19,7 +18,6 @@ while getopts "${BR_BACKEND_DL_GETOPTS}" OPT; do
     case "${OPT}" in
     q)  verbose=-q;;
     o)  output="${OPTARG}";;
-    f)  filename="${OPTARG}";;
     u)  uri="${OPTARG}";;
     :)  printf "option '%s' expects a mandatory argument\n" "${OPTARG}"; exit 1;;
     \?) printf "unknown option '%s'\n" "${OPTARG}" >&2; exit 1;;
@@ -34,7 +32,4 @@ _scp() {
     eval ${SCP} "${@}"
 }
 
-# Remove any scheme prefix
-uri="${uri##scp://}"
-
-_scp ${verbose} "${@}" "'${uri}/${filename}'" "'${output}'"
+_scp ${verbose} "${@}" "'${uri}'" "'${output}'"

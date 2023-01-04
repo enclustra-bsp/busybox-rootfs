@@ -5,6 +5,12 @@ Freescale i.MX8MQ EVK board
 This file documents the Buildroot support for the Freescale i.MX8MQ
 EVK board.
 
+Hardware support
+================
+
+Currently only basic support for hardware is available, currently no
+support for GPU, VPU and other HW features.
+
 Build
 =====
 
@@ -21,7 +27,7 @@ You will find in output/images/ the following files:
   - boot.vfat
   - fsl-imx8mq-evk.dtb
   - Image
-  - imx8-boot-sd.bin
+  - imx-boot-imx8mqevk-sd.bin
   - lpddr4_pmu_train_fw.bin
   - rootfs.ext2
   - rootfs.ext4
@@ -69,7 +75,7 @@ Enable HDMI output
 
 To enable HDMI output at boot you must provide the video kernel boot
 argument.  To set the video boot argument from U-Boot run after
-stopping in U-Boot prompt:
+stoping in U-Boot prompt:
 
 setenv mmcargs 'setenv bootargs console=${console} root=${mmcroot} video=HDMI-A-1:1920x1080-32@60'
 saveenv

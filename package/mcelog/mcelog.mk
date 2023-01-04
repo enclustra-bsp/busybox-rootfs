@@ -4,10 +4,11 @@
 #
 ################################################################################
 
-MCELOG_VERSION = 168
-MCELOG_SITE = $(call github,andikleen,mcelog,v$(MCELOG_VERSION))
+MCELOG_VERSION = v153
+MCELOG_SITE = $(BR2_KERNEL_MIRROR)/scm/utils/cpu/mce/mcelog.git
+MCELOG_SITE_METHOD = git
 MCELOG_LICENSE = GPL-2.0
-MCELOG_LICENSE_FILES = LICENSE
+MCELOG_LICENSE_FILES = README.md
 
 define MCELOG_BUILD_CMDS
 	$(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(@D) all

@@ -33,8 +33,7 @@ endif
 LIBPRI_UTILS = pridump pritest rosetest testprilib
 
 define LIBPRI_BUILD_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE1) $(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -fPIC" -C $(@D) \
+	$(TARGET_MAKE_ENV) $(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(@D) \
 		$(LIBPRI_LIBS) $(LIBPRI_UTILS)
 endef
 

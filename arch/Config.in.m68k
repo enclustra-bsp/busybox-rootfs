@@ -38,6 +38,3 @@ config BR2_GCC_TARGET_CPU
 
 config BR2_READELF_ARCH_NAME
 	default "MC68000"
-
-# vim: ft=kconfig
-# -*- mode:kconfig; -*-

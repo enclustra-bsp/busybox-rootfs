@@ -21,6 +21,9 @@ endef
 define DARKHTTPD_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 0644 package/darkhttpd/darkhttpd.service \
 		$(TARGET_DIR)/usr/lib/systemd/system/darkhttpd.service
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -fs ../../../../usr/lib/systemd/system/darkhttpd.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/darkhttpd.service
 endef
 
 define DARKHTTPD_INSTALL_INIT_SYSV

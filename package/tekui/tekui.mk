@@ -11,9 +11,6 @@ TEKUI_LICENSE = MIT
 TEKUI_LICENSE_FILES = COPYRIGHT
 TEKUI_DEPENDENCIES = freetype luainterpreter
 
-# Package does not build in parallel due to improper make rules
-TEKUI_MAKE = $(MAKE1)
-
 TEKUI_MAKE_OPTS = \
 	CC="$(TARGET_CC) -fPIC" \
 	AR="$(TARGET_AR) rcu" \

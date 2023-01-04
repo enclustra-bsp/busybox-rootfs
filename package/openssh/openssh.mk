@@ -4,17 +4,13 @@
 #
 ################################################################################
 
-OPENSSH_VERSION = 8.2p1
+OPENSSH_VERSION = 7.7p1
 OPENSSH_SITE = http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable
 OPENSSH_LICENSE = BSD-3-Clause, BSD-2-Clause, Public Domain
 OPENSSH_LICENSE_FILES = LICENCE
-OPENSSH_CONF_ENV = \
-	LD="$(TARGET_CC)" \
-	LDFLAGS="$(TARGET_CFLAGS)" \
-	LIBS=`$(PKG_CONFIG_HOST_BINARY) --libs openssl`
+OPENSSH_CONF_ENV = LD="$(TARGET_CC)" LDFLAGS="$(TARGET_CFLAGS)"
 OPENSSH_CONF_OPTS = \
 	--sysconfdir=/etc/ssh \
-	--with-default-path=$(BR2_SYSTEM_DEFAULT_PATH) \
 	--disable-lastlog \
 	--disable-utmp \
 	--disable-utmpx \
@@ -22,15 +18,15 @@ OPENSSH_CONF_OPTS = \
 	--disable-wtmpx \
 	--disable-strip
 
-define OPENSSH_PERMISSIONS
-	/var/empty d 755 root root - - - - -
+define OPENSSH_USERS
+	sshd -1 sshd -1 * - - - SSH drop priv user
 endef
 
 ifeq ($(BR2_TOOLCHAIN_SUPPORTS_PIE),)
 OPENSSH_CONF_OPTS += --without-pie
 endif
 
-OPENSSH_DEPENDENCIES = host-pkgconf zlib openssl
+OPENSSH_DEPENDENCIES = zlib openssl
 
 ifeq ($(BR2_PACKAGE_CRYPTODEV_LINUX),y)
 OPENSSH_DEPENDENCIES += cryptodev-linux
@@ -60,21 +56,12 @@ else
 OPENSSH_CONF_OPTS += --without-selinux
 endif
 
-ifeq ($(BR2_PACKAGE_SYSTEMD_SYSUSERS),y)
-define OPENSSH_INSTALL_SYSTEMD_SYSUSERS
-	$(INSTALL) -m 0644 -D package/openssh/sshd-sysusers.conf \
-		$(TARGET_DIR)/usr/lib/sysusers.d/sshd.conf
-endef
-else
-define OPENSSH_USERS
-	sshd -1 sshd -1 * /var/empty - - SSH drop priv user
-endef
-endif
-
 define OPENSSH_INSTALL_INIT_SYSTEMD
 	$(INSTALL) -D -m 644 package/openssh/sshd.service \
 		$(TARGET_DIR)/usr/lib/systemd/system/sshd.service
-	$(OPENSSH_INSTALL_SYSTEMD_SYSUSERS)
+	mkdir -p $(TARGET_DIR)/etc/systemd/system/multi-user.target.wants
+	ln -fs ../../../../usr/lib/systemd/system/sshd.service \
+		$(TARGET_DIR)/etc/systemd/system/multi-user.target.wants/sshd.service
 endef
 
 define OPENSSH_INSTALL_INIT_SYSV

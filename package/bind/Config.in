@@ -1,6 +1,8 @@
 config BR2_PACKAGE_BIND
 	bool "bind"
 	depends on BR2_USE_MMU # fork()
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	depends on !BR2_STATIC_LIBS
 	help
 	  BIND (Berkeley Internet Name Domain) is an
 	  implementation of the Domain Name System (DNS) protocols
@@ -22,12 +24,13 @@ config BR2_PACKAGE_BIND
 	  intended to be linked with applications requiring name
 	  service.
 
-	  https://www.isc.org/bind/
+	  http://www.isc.org/sw/bind/
 
 if BR2_PACKAGE_BIND
 
 config BR2_PACKAGE_BIND_SERVER
 	bool "Install server components"
+	default y
 	help
 	  Install server components (named, lwresd)
 
@@ -37,3 +40,7 @@ config BR2_PACKAGE_BIND_TOOLS
 	  Install tools (dig, host, nslookup, nsupdate)
 
 endif
+
+comment "bind needs a toolchain w/ threads, dynamic library"
+	depends on BR2_USE_MMU
+	depends on !BR2_TOOLCHAIN_HAS_THREADS || BR2_STATIC_LIBS

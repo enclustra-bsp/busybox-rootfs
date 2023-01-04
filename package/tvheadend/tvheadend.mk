@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-TVHEADEND_VERSION = 221c29b40b1e53ae09a69d9458442dd4fea665f5
+TVHEADEND_VERSION = e06ffd87beff16103c47d6fa542df2374fca6fd3
 TVHEADEND_SITE = $(call github,tvheadend,tvheadend,$(TVHEADEND_VERSION))
 TVHEADEND_LICENSE = GPL-3.0+
 TVHEADEND_LICENSE_FILES = LICENSE.md
@@ -65,9 +65,9 @@ endif
 
 ifeq ($(BR2_PACKAGE_LIBDVBCSA),y)
 TVHEADEND_DEPENDENCIES += libdvbcsa
-TVHEADEND_CONF_OPTS += --enable-tvhcsa
+TVHEADEND_CONF_OPTS += --enable-dvbcsa
 else
-TVHEADEND_CONF_OPTS += --disable-tvhcsa
+TVHEADEND_CONF_OPTS += --disable-dvbcsa
 endif
 
 ifeq ($(BR2_PACKAGE_LIBHDHOMERUN),y)
@@ -94,10 +94,6 @@ else
 TVHEADEND_CONF_OPTS += --disable-pcre
 endif
 
-ifeq ($(BR2_TOOLCHAIN_SUPPORTS_PIE),)
-TVHEADEND_CONF_OPTS += --disable-pie
-endif
-
 TVHEADEND_DEPENDENCIES += dtv-scan-tables
 
 # The tvheadend build system expects the transponder data to be present inside
@@ -118,7 +114,7 @@ define TVHEADEND_CONFIGURE_CMDS
 		./configure \
 			--prefix=/usr \
 			--arch="$(ARCH)" \
-			--cpu="$(GCC_TARGET_CPU)" \
+			--cpu="$(BR2_GCC_TARGET_CPU)" \
 			--nowerror \
 			--python="$(HOST_DIR)/bin/python" \
 			--enable-dvbscan \

@@ -30,6 +30,3 @@ config BR2_ENDIAN
 
 config BR2_READELF_ARCH_NAME
 	default "Renesas / SuperH SH"
-
-# vim: ft=kconfig
-# -*- mode:kconfig; -*-

@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import infra.basetest
 
@@ -29,8 +30,9 @@ class TestJffs2(infra.basetest.BRTest):
 
     def test_run(self):
         img = os.path.join(self.builddir, "images", "rootfs.jffs2")
-        cmd = ["host/sbin/jffs2dump", "-c", img]
-        out = infra.run_cmd_on_host(self.builddir, cmd)
+        out = subprocess.check_output(["host/sbin/jffs2dump", "-c", img],
+                                      cwd=self.builddir,
+                                      env={"LANG": "C"})
         out = out.splitlines()
         self.assertTrue(jffs2dump_find_file(out, "busybox"))
 
