@@ -4,11 +4,12 @@
 #
 ################################################################################
 
-X265_VERSION = 2.7
+X265_VERSION = 3.5
 X265_SOURCE = x265_$(X265_VERSION).tar.gz
-X265_SITE = https://bitbucket.org/multicoreware/x265/downloads
+X265_SITE = https://bitbucket.org/multicoreware/x265_git/downloads
 X265_LICENSE = GPL-2.0+
 X265_LICENSE_FILES = COPYING
+X265_CPE_ID_VENDOR = multicorewareinc
 X265_SUBDIR = source
 X265_INSTALL_STAGING = YES
 

@@ -4,8 +4,6 @@
 # Its role is to ensure atomicity when saving downloaded files
 # back to BR2_DL_DIR, and not clutter BR2_DL_DIR with partial,
 # failed downloads.
-#
-# Call it with -h to see some help.
 
 # To avoid cluttering BR2_DL_DIR, we download to a trashable
 # location, namely in $(BUILD_DIR).
@@ -19,17 +17,16 @@
 # We want to catch any unexpected failure, and exit immediately.
 set -e
 
-export BR_BACKEND_DL_GETOPTS=":hc:d:o:n:N:H:ru:qf:e"
+export BR_BACKEND_DL_GETOPTS=":hc:d:o:n:N:H:lru:qf:e"
 
 main() {
     local OPT OPTARG
-    local backend output hfile recurse quiet rc
+    local backend output hfile large_file recurse quiet rc
     local -a uris
 
     # Parse our options; anything after '--' is for the backend
-    while getopts ":hc:d:D:o:n:N:H:rf:u:q" OPT; do
+    while getopts ":c:d:D:o:n:N:H:lrf:u:qp:" OPT; do
         case "${OPT}" in
-        h)  help; exit 0;;
         c)  cset="${OPTARG}";;
         d)  dl_dir="${OPTARG}";;
         D)  old_dl_dir="${OPTARG}";;
@@ -37,9 +34,11 @@ main() {
         n)  raw_base_name="${OPTARG}";;
         N)  base_name="${OPTARG}";;
         H)  hfile="${OPTARG}";;
+        l)  large_file="-l";;
         r)  recurse="-r";;
         f)  filename="${OPTARG}";;
         u)  uris+=( "${OPTARG}" );;
+        p)  post_process="${OPTARG}";;
         q)  quiet="-q";;
         :)  error "option '%s' expects a mandatory argument\n" "${OPTARG}";;
         \?) error "unknown option '%s'\n" "${OPTARG}";;
@@ -88,14 +87,15 @@ main() {
     download_and_check=0
     rc=1
     for uri in "${uris[@]}"; do
-        backend=${uri%%+*}
+        backend_urlencode="${uri%%+*}"
+        backend="${backend_urlencode%|*}"
         case "${backend}" in
-            git|svn|cvs|bzr|file|scp|hg) ;;
+            git|svn|cvs|bzr|file|scp|hg|sftp) ;;
             *) backend="wget" ;;
         esac
         uri=${uri#*+}
 
-        urlencode=${backend#*|}
+        urlencode=${backend_urlencode#*|}
         # urlencode must be "urlencode"
         [ "${urlencode}" != "urlencode" ] && urlencode=""
 
@@ -129,12 +129,18 @@ main() {
                 -f "${filename}" \
                 -u "${uri}" \
                 -o "${tmpf}" \
-                ${quiet} ${recurse} -- "${@}"
+                ${quiet} ${large_file} ${recurse} -- "${@}"
         then
             # cd back to keep path coherence
             cd "${OLDPWD}"
             rm -rf "${tmpd}"
             continue
+        fi
+
+        if [ -n "${post_process}" ] ; then
+            "${OLDPWD}/support/download/${post_process}-post-process" \
+                -o "${tmpf}" \
+                -n "${raw_base_name}"
         fi
 
         # cd back to free the temp-dir, so we can remove it later
@@ -210,48 +216,6 @@ main() {
     fi
 
     return ${rc}
-}
-
-help() {
-    cat <<_EOF_
-NAME
-    ${my_name} - download wrapper for Buildroot
-
-SYNOPSIS
-    ${my_name} [OPTION]... -- [BACKEND OPTION]...
-
-DESCRIPTION
-    Wrapper script around different download mechanisms. Ensures that
-    concurrent downloads do not conflict, that partial downloads are
-    properly evicted without leaving temporary files, and that access
-    rights are maintained.
-
-    -h  This help text.
-
-    -u URIs
-        The URI to get the file from, the URI must respect the format given in
-        the example.
-        You may give as many '-u URI' as you want, the script will stop at the
-        frist successful download.
-
-        Example: backend+URI; git+http://example.com or http+http://example.com
-
-    -o FILE
-        Store the downloaded archive in FILE.
-
-    -H FILE
-        Use FILE to read hashes from, and check them against the downloaded
-        archive.
-
-  Exit status:
-    0   if OK
-    !0  in case of error
-
-ENVIRONMENT
-
-    BUILD_DIR
-        The path to Buildroot's build dir
-_EOF_
 }
 
 trace()  { local msg="${1}"; shift; printf "%s: ${msg}" "${my_name}" "${@}"; }
