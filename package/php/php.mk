@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-PHP_VERSION = 8.0.25
+PHP_VERSION = 8.2.8
 PHP_SITE = https://www.php.net/distributions
 PHP_SOURCE = php-$(PHP_VERSION).tar.xz
 PHP_INSTALL_STAGING = YES
@@ -33,6 +33,10 @@ endif
 
 ifeq ($(BR2_STATIC_LIBS)$(BR2_TOOLCHAIN_HAS_THREADS),yy)
 PHP_STATIC_LIBS += -lpthread
+endif
+
+ifeq ($(BR2_TOOLCHAIN_HAS_LIBATOMIC),y)
+PHP_EXTRA_LIBS += -latomic
 endif
 
 ifeq ($(call qstrip,$(BR2_TARGET_LOCALTIME)),)

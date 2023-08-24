@@ -1,8 +1,6 @@
 # Makefile for buildroot
 #
-# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
-# Copyright (C) 2006-2014 by the Buildroot developers <buildroot@uclibc.org>
-# Copyright (C) 2014-2020 by the Buildroot developers <buildroot@buildroot.org>
+# Copyright (C) the Buildroot developers <buildroot@buildroot.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,9 +90,9 @@ all:
 .PHONY: all
 
 # Set and export the version string
-export BR2_VERSION := 2022.02.8
+export BR2_VERSION := 2023.05.1
 # Actual time the release is cut (for reproducible builds)
-BR2_VERSION_EPOCH = 1670685000
+BR2_VERSION_EPOCH = 1689606300
 
 # Save running make version since it's clobbered by the make package
 RUNNING_MAKE_VERSION := $(MAKE_VERSION)
@@ -125,7 +123,7 @@ endif
 noconfig_targets := menuconfig nconfig gconfig xconfig config oldconfig randconfig \
 	defconfig %_defconfig allyesconfig allnoconfig alldefconfig syncconfig release \
 	randpackageconfig allyespackageconfig allnopackageconfig \
-	print-version olddefconfig distclean manual manual-% check-package check-flake8
+	print-version olddefconfig distclean manual manual-% check-package
 
 # Some global targets do not trigger a build, but are used to collect
 # metadata, or do various checks. When such targets are triggered,
@@ -396,6 +394,9 @@ unexport DESTDIR
 # Causes breakage with packages that needs host-ruby
 unexport RUBYOPT
 
+# Compilation of perl-related packages will fail otherwise
+unexport PERL_MM_OPT
+
 include package/pkg-utils.mk
 include package/doc-asciidoc.mk
 
@@ -478,8 +479,7 @@ BR_CACHE_DIR ?= $(call qstrip,$(BR2_CCACHE_DIR))
 export BR_CACHE_DIR
 HOSTCC = $(CCACHE) $(HOSTCC_NOCCACHE)
 HOSTCXX = $(CCACHE) $(HOSTCXX_NOCCACHE)
-else
-export BR_NO_CCACHE
+export BR2_USE_CCACHE ?= 1
 endif
 
 # Scripts in support/ or post-build scripts may need to reference
@@ -565,12 +565,10 @@ ifeq ($(BR_FORCE_CHECK_DEPENDENCIES),YES)
 
 define CHECK_ONE_DEPENDENCY
 ifeq ($$($(2)_TYPE),target)
-ifeq ($$($(2)_IS_VIRTUAL),)
 ifneq ($$($$($(2)_KCONFIG_VAR)),y)
 $$(error $$($(2)_NAME) is in the dependency chain of $$($(1)_NAME) that \
 has added it to its _DEPENDENCIES variable without selecting it or \
 depending on it from Config.in)
-endif
 endif
 endif
 endef
@@ -648,14 +646,6 @@ STRIP_FIND_SPECIAL_LIBS_CMD = \
 	$(STRIP_FIND_COMMON_CMD) \
 	\( -name 'ld-*.so*' -o -name 'libpthread*.so*' \) \
 	-print0
-
-ifeq ($(BR2_ECLIPSE_REGISTER),y)
-define TOOLCHAIN_ECLIPSE_REGISTER
-	./support/scripts/eclipse-register-toolchain `readlink -f $(O)` \
-		$(notdir $(TARGET_CROSS)) $(BR2_ARCH)
-endef
-TARGET_FINALIZE_HOOKS += TOOLCHAIN_ECLIPSE_REGISTER
-endif
 
 # Generate locale data.
 ifeq ($(BR2_TOOLCHAIN_USES_GLIBC),y)
@@ -735,7 +725,7 @@ target-finalize: $(PACKAGES) $(TARGET_DIR) host-finalize
 	rm -rf $(TARGET_DIR)/usr/include $(TARGET_DIR)/usr/share/aclocal \
 		$(TARGET_DIR)/usr/lib/pkgconfig $(TARGET_DIR)/usr/share/pkgconfig \
 		$(TARGET_DIR)/usr/lib/cmake $(TARGET_DIR)/usr/share/cmake \
-		$(TARGET_DIR)/usr/doc
+		$(TARGET_DIR)/usr/lib/rpm $(TARGET_DIR)/usr/doc
 	find $(TARGET_DIR)/usr/{lib,share}/ -name '*.cmake' -print0 | xargs -0 rm -f
 	find $(TARGET_DIR)/lib/ $(TARGET_DIR)/usr/lib/ $(TARGET_DIR)/usr/libexec/ \
 		\( -name '*.a' -o -name '*.la' -o -name '*.prl' \) -print0 | xargs -0 rm -f
@@ -809,6 +799,14 @@ endif # merged /usr
 		$(Q)$(EXTRA_ENV) $(s) $(TARGET_DIR) $(call qstrip,$(BR2_ROOTFS_POST_SCRIPT_ARGS))$(sep))
 
 	touch $(TARGET_DIR)/usr
+
+# Note: this will run in the filesystem context, so will use a copy
+# of target/, not the real one, so the files are still available on
+# re-builds (foo-rebuild, etc...)
+define ROOTFS_RM_HWDB_DATA
+	rm -rf $(TARGET_DIR)/usr/lib/udev/hwdb.d/ $(TARGET_DIR)/etc/udev/hwdb.d/
+endef
+ROOTFS_PRE_CMD_HOOKS += ROOTFS_RM_HWDB_DATA
 
 .PHONY: target-post-image
 target-post-image: $(TARGETS_ROOTFS) target-finalize staging-finalize
@@ -1013,13 +1011,18 @@ oldconfig syncconfig olddefconfig: $(BUILD_DIR)/buildroot-config/conf outputmake
 defconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 	@$(COMMON_CONFIG_ENV) $< --defconfig$(if $(DEFCONFIG),=$(DEFCONFIG)) $(CONFIG_CONFIG_IN)
 
-define percent_defconfig
-# Override the BR2_DEFCONFIG from COMMON_CONFIG_ENV with the new defconfig
-%_defconfig: $(BUILD_DIR)/buildroot-config/conf $(1)/configs/%_defconfig outputmakefile
-	@$$(COMMON_CONFIG_ENV) BR2_DEFCONFIG=$(1)/configs/$$@ \
-		$$< --defconfig=$(1)/configs/$$@ $$(CONFIG_CONFIG_IN)
-endef
-$(eval $(foreach d,$(call reverse,$(TOPDIR) $(BR2_EXTERNAL_DIRS)),$(call percent_defconfig,$(d))$(sep)))
+%_defconfig: $(BUILD_DIR)/buildroot-config/conf  outputmakefile
+	@defconfig=$(or \
+		$(firstword \
+			$(foreach d, \
+				$(call reverse,$(TOPDIR) $(BR2_EXTERNAL_DIRS)), \
+				$(wildcard $(d)/configs/$@) \
+			) \
+		), \
+		$(error "Can't find $@") \
+	); \
+	$(COMMON_CONFIG_ENV) BR2_DEFCONFIG=$${defconfig} \
+		$< --defconfig=$${defconfig} $(CONFIG_CONFIG_IN)
 
 update-defconfig: savedefconfig
 
@@ -1039,7 +1042,7 @@ savedefconfig: $(BUILD_DIR)/buildroot-config/conf outputmakefile
 
 # staging and target directories do NOT list these as
 # dependencies anywhere else
-$(BUILD_DIR) $(BASE_TARGET_DIR) $(HOST_DIR) $(BINARIES_DIR) $(LEGAL_INFO_DIR) $(REDIST_SOURCES_DIR_TARGET) $(REDIST_SOURCES_DIR_HOST) $(PER_PACKAGE_DIR):
+$(BASE_DIR) $(BUILD_DIR) $(BASE_TARGET_DIR) $(HOST_DIR) $(BINARIES_DIR) $(LEGAL_INFO_DIR) $(REDIST_SOURCES_DIR_TARGET) $(REDIST_SOURCES_DIR_HOST) $(PER_PACKAGE_DIR):
 	@mkdir -p $@
 
 # outputmakefile generates a Makefile in the output directory, if using a
@@ -1246,17 +1249,14 @@ release:
 print-version:
 	@echo $(BR2_VERSION_FULL)
 
-check-flake8:
-	$(Q)git ls-tree -r --name-only HEAD \
-	| xargs file \
-	| grep 'Python script' \
-	| cut -d':' -f1 \
-	| xargs -- python3 -m flake8 --statistics
-
 check-package:
-	find $(TOPDIR) -type f \( -name '*.mk' -o -name '*.hash' -o -name 'Config.*' -o -name '*.patch' \) \
-		-a -not -name '*.orig' -a -not -name '*.rej' \
-		-exec ./utils/check-package --exclude=Sob {} +
+	$(Q)./utils/check-package `git ls-tree -r --name-only HEAD` \
+		--ignore-list=$(TOPDIR)/.checkpackageignore
+
+.PHONY: .checkpackageignore
+.checkpackageignore:
+	$(Q)./utils/check-package --failed-only `git ls-tree -r --name-only HEAD` \
+		> .checkpackageignore
 
 include docs/manual/manual.mk
 -include $(foreach dir,$(BR2_EXTERNAL_DIRS),$(sort $(wildcard $(dir)/docs/*/*.mk)))

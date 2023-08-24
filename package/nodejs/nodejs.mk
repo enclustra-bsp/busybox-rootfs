@@ -4,11 +4,11 @@
 #
 ################################################################################
 
-NODEJS_VERSION = 14.20.1
+NODEJS_VERSION = 16.20.0
 NODEJS_SOURCE = node-v$(NODEJS_VERSION).tar.xz
 NODEJS_SITE = http://nodejs.org/dist/v$(NODEJS_VERSION)
 NODEJS_DEPENDENCIES = \
-	host-nodejs \
+	host-ninja \
 	host-pkgconf \
 	host-python3 \
 	host-qemu \
@@ -20,6 +20,7 @@ NODEJS_DEPENDENCIES = \
 HOST_NODEJS_DEPENDENCIES = \
 	host-icu \
 	host-libopenssl \
+	host-ninja \
 	host-pkgconf \
 	host-python3 \
 	host-zlib
@@ -37,7 +38,8 @@ NODEJS_CONF_OPTS = \
 	--without-dtrace \
 	--without-etw \
 	--cross-compiling \
-	--dest-os=linux
+	--dest-os=linux \
+	--ninja
 
 HOST_NODEJS_MAKE_OPTS = \
 	$(HOST_CONFIGURE_OPTS) \
@@ -82,7 +84,7 @@ NODEJS_CONF_OPTS += --without-npm
 endif
 
 define HOST_NODEJS_CONFIGURE_CMDS
-	(cd $(@D); \
+	cd $(@D); \
 		$(HOST_CONFIGURE_OPTS) \
 		PATH=$(@D)/bin:$(BR_PATH) \
 		PYTHON=$(HOST_DIR)/bin/python3 \
@@ -96,15 +98,8 @@ define HOST_NODEJS_CONFIGURE_CMDS
 		--shared-zlib \
 		--no-cross-compiling \
 		--with-intl=system-icu \
-	)
+		--ninja
 endef
-
-NODEJS_HOST_TOOLS_V8 = \
-	torque \
-	gen-regexp-special-case \
-	bytecode_builtins_list_generator
-NODEJS_HOST_TOOLS_NODE = mkcodecache
-NODEJS_HOST_TOOLS = $(NODEJS_HOST_TOOLS_V8) $(NODEJS_HOST_TOOLS_NODE)
 
 HOST_NODEJS_CXXFLAGS = $(HOST_CXXFLAGS)
 
@@ -114,14 +109,17 @@ define HOST_NODEJS_BUILD_CMDS
 		$(HOST_NODEJS_MAKE_OPTS)
 endef
 
+ifeq ($(BR2_PACKAGE_HOST_NODEJS_COREPACK),y)
+define HOST_NODEJS_ENABLE_COREPACK
+	$(COREPACK) enable
+endef
+endif
+
 define HOST_NODEJS_INSTALL_CMDS
 	$(HOST_MAKE_ENV) PYTHON=$(HOST_DIR)/bin/python3 \
 		$(MAKE) -C $(@D) install \
 		$(HOST_NODEJS_MAKE_OPTS)
-
-	$(foreach f,$(NODEJS_HOST_TOOLS), \
-		$(INSTALL) -m755 -D $(@D)/out/Release/$(f) $(HOST_DIR)/bin/$(f)
-	)
+	$(HOST_NODEJS_ENABLE_COREPACK)
 endef
 
 ifeq ($(BR2_i386),y)
@@ -232,8 +230,7 @@ endef
 NODEJS_MODULES_LIST= $(call qstrip,\
 	$(BR2_PACKAGE_NODEJS_MODULES_ADDITIONAL))
 
-# Define NPM for other packages to use
-NPM = $(TARGET_CONFIGURE_OPTS) \
+NODEJS_BIN_ENV = $(TARGET_CONFIGURE_OPTS) \
 	LDFLAGS="$(NODEJS_LDFLAGS)" \
 	LD="$(TARGET_CXX)" \
 	npm_config_arch=$(NODEJS_CPU) \
@@ -241,13 +238,21 @@ NPM = $(TARGET_CONFIGURE_OPTS) \
 	npm_config_build_from_source=true \
 	npm_config_nodedir=$(BUILD_DIR)/nodejs-$(NODEJS_VERSION) \
 	npm_config_prefix=$(TARGET_DIR)/usr \
-	npm_config_cache=$(BUILD_DIR)/.npm-cache \
-	$(HOST_DIR)/bin/npm
+	npm_config_cache=$(BUILD_DIR)/.npm-cache
+
+# Define various packaging tools for other packages to use
+NPM = $(NODEJS_BIN_ENV) $(HOST_DIR)/bin/npm
+ifeq ($(BR2_PACKAGE_HOST_NODEJS_COREPACK),y)
+COREPACK = $(NODEJS_BIN_ENV) $(HOST_DIR)/bin/corepack
+PNPM = $(NODEJS_BIN_ENV) $(HOST_DIR)/bin/pnpm
+YARN = $(NODEJS_BIN_ENV) $(HOST_DIR)/bin/yarn
+endif
 
 #
 # We can only call NPM if there's something to install.
 #
 ifneq ($(NODEJS_MODULES_LIST),)
+NODEJS_DEPENDENCIES += host-nodejs
 define NODEJS_INSTALL_MODULES
 	# If you're having trouble with module installation, adding -d to the
 	# npm install call below and setting npm_config_rollback=false can both

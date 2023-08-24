@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-BIND_VERSION = 9.16.33
+BIND_VERSION = 9.16.42
 BIND_SOURCE= bind-$(BIND_VERSION).tar.xz
 BIND_SITE = https://ftp.isc.org/isc/bind9/$(BIND_VERSION)
 # bind does not support parallel builds.
@@ -91,7 +91,7 @@ endif
 # Used by dnssec-keymgr
 ifeq ($(BR2_PACKAGE_PYTHON_PLY),y)
 BIND_DEPENDENCIES += host-python-ply
-BIND_CONF_OPTS += --with-python=$(HOST_DIR)/usr/bin/python
+BIND_CONF_OPTS += --with-python=$(HOST_DIR)/bin/python
 else
 BIND_CONF_OPTS += --with-python=no
 endif

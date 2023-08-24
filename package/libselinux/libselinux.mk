@@ -4,14 +4,14 @@
 #
 ################################################################################
 
-LIBSELINUX_VERSION = 3.3
+LIBSELINUX_VERSION = 3.5
 LIBSELINUX_SITE = https://github.com/SELinuxProject/selinux/releases/download/$(LIBSELINUX_VERSION)
 LIBSELINUX_LICENSE = Public Domain
 LIBSELINUX_LICENSE_FILES = LICENSE
 LIBSELINUX_CPE_ID_VENDOR = selinuxproject
 
 LIBSELINUX_DEPENDENCIES = \
-	$(BR2_COREUTILS_HOST_DEPENDENCY) host-pkgconf libsepol pcre
+	$(BR2_COREUTILS_HOST_DEPENDENCY) host-pkgconf libsepol pcre2
 
 LIBSELINUX_INSTALL_STAGING = YES
 
@@ -20,7 +20,8 @@ LIBSELINUX_INSTALL_STAGING = YES
 LIBSELINUX_MAKE_OPTS = \
 	$(TARGET_CONFIGURE_OPTS) \
 	ARCH=$(NORMALIZED_ARCH) \
-	SHLIBDIR=/usr/lib
+	SHLIBDIR=/usr/lib \
+	USE_PCRE2=y
 
 LIBSELINUX_MAKE_INSTALL_TARGETS = install
 
@@ -30,7 +31,11 @@ LIBSELINUX_MAKE_OPTS += FTS_LDLIBS=-lfts
 endif
 
 ifeq ($(BR2_PACKAGE_PYTHON3),y)
-LIBSELINUX_DEPENDENCIES += python3 host-swig
+LIBSELINUX_DEPENDENCIES += \
+	python3 \
+	python-setuptools \
+	host-python-pip \
+	host-swig
 
 LIBSELINUX_MAKE_OPTS += \
 	$(PKG_PYTHON_DISTUTILS_ENV) \
@@ -76,14 +81,21 @@ define LIBSELINUX_INSTALL_TARGET_CMDS
 endef
 
 HOST_LIBSELINUX_DEPENDENCIES = \
-	host-pkgconf host-libsepol host-pcre host-swig host-python3
+	host-pkgconf \
+	host-libsepol \
+	host-pcre2 \
+	host-swig \
+	host-python3 \
+	host-python-pip \
+	host-python-setuptools
 
 HOST_LIBSELINUX_MAKE_OPTS = \
 	$(HOST_CONFIGURE_OPTS) \
 	PREFIX=$(HOST_DIR) \
 	SHLIBDIR=$(HOST_DIR)/lib \
 	$(HOST_PKG_PYTHON_DISTUTILS_ENV) \
-	PYTHON=python$(PYTHON3_VERSION_MAJOR)
+	PYTHON=python$(PYTHON3_VERSION_MAJOR) \
+	USE_PCRE2=y
 
 define HOST_LIBSELINUX_BUILD_CMDS
 	$(HOST_MAKE_ENV) $(MAKE1) -C $(@D) \

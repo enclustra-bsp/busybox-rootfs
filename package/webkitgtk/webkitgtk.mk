@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WEBKITGTK_VERSION = 2.36.7
+WEBKITGTK_VERSION = 2.38.6
 WEBKITGTK_SITE = https://www.webkitgtk.org/releases
 WEBKITGTK_SOURCE = webkitgtk-$(WEBKITGTK_VERSION).tar.xz
 WEBKITGTK_INSTALL_STAGING = YES
@@ -18,13 +18,12 @@ WEBKITGTK_DEPENDENCIES = host-ruby host-python3 host-gperf \
 	libtasn1 libxml2 libxslt openjpeg sqlite webp woff2
 WEBKITGTK_CONF_OPTS = \
 	-DENABLE_API_TESTS=OFF \
-	-DENABLE_GAMEPAD=OFF \
+	-DENABLE_DOCUMENTATION=OFF \
 	-DENABLE_GEOLOCATION=OFF \
-	-DENABLE_GTKDOC=OFF \
 	-DENABLE_MINIBROWSER=ON \
 	-DENABLE_SPELLCHECK=ON \
+	-DENABLE_WEB_RTC=OFF \
 	-DPORT=GTK \
-	-DUSE_LIBNOTIFY=OFF \
 	-DUSE_LIBHYPHEN=OFF \
 	-DUSE_OPENJPEG=ON \
 	-DUSE_SOUP2=ON \
@@ -69,6 +68,13 @@ WEBKITGTK_CONF_OPTS += -DENABLE_INTROSPECTION=ON
 WEBKITGTK_DEPENDENCIES += gobject-introspection
 else
 WEBKITGTK_CONF_OPTS += -DENABLE_INTROSPECTION=OFF
+endif
+
+ifeq ($(BR2_PACKAGE_LIBMANETTE),y)
+WEBKITGTK_CONF_OPTS += -DENABLE_GAMEPAD=ON
+WEBKITGTK_DEPENDENCIES += libmanette
+else
+WEBKITGTK_CONF_OPTS += -DENABLE_GAMEPAD=OFF
 endif
 
 # Only one target platform can be built, assume X11 > Wayland
@@ -132,5 +138,24 @@ endif
 ifeq ($(BR2_ARM_CPU_ARMV5)$(BR2_ARM_CPU_ARMV6)$(BR2_MIPS_CPU_MIPS32R6)$(BR2_MIPS_CPU_MIPS64R6),y)
 WEBKITGTK_CONF_OPTS += -DENABLE_JIT=OFF -DENABLE_C_LOOP=ON -DENABLE_SAMPLING_PROFILER=OFF
 endif
+
+# webkitgtk needs cmake >= 3.20 when not building with ninja, which is
+# above our minimal version in
+# support/dependencies/check-host-cmake.mk, so use the ninja backend:
+# https://github.com/WebKit/WebKit/commit/6cd89696b5d406c1a3d9a7a9bbb18fda9284fa1f
+WEBKITGTK_CONF_OPTS += -GNinja
+WEBKITGTK_DEPENDENCIES += host-ninja
+
+define WEBKITGTK_BUILD_CMDS
+	$(TARGET_MAKE_ENV) $(BR2_CMAKE) --build $(WEBKITGTK_BUILDDIR)
+endef
+
+define WEBKITGTK_INSTALL_STAGING_CMDS
+	$(TARGET_MAKE_ENV) DESTDIR=$(STAGING_DIR) $(BR2_CMAKE) --install $(WEBKITGTK_BUILDDIR)
+endef
+
+define WEBKITGTK_INSTALL_TARGET_CMDS
+	$(TARGET_MAKE_ENV) DESTDIR=$(TARGET_DIR) $(BR2_CMAKE) --install $(WEBKITGTK_BUILDDIR)
+endef
 
 $(eval $(cmake-package))

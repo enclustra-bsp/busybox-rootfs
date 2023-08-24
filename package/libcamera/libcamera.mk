@@ -5,7 +5,7 @@
 ################################################################################
 
 LIBCAMERA_SITE = https://git.linuxtv.org/libcamera.git
-LIBCAMERA_VERSION = 1966b9a58436fab51f8270aad6a228b935e4fac4
+LIBCAMERA_VERSION = v0.0.5
 LIBCAMERA_SITE_METHOD = git
 LIBCAMERA_DEPENDENCIES = \
 	host-openssl \
@@ -13,6 +13,7 @@ LIBCAMERA_DEPENDENCIES = \
 	host-python-jinja2 \
 	host-python-ply \
 	host-python-pyyaml \
+	libyaml \
 	gnutls
 LIBCAMERA_CONF_OPTS = \
 	-Dandroid=disabled \

@@ -20,7 +20,7 @@ UBOOT_INSTALL_IMAGES = YES
 UBOOT_DEPENDENCIES = host-pkgconf $(BR2_MAKE_HOST_DEPENDENCY)
 UBOOT_MAKE = $(BR2_MAKE)
 
-ifeq ($(UBOOT_VERSION),custom)
+ifeq ($(BR2_TARGET_UBOOT_CUSTOM_TARBALL),y)
 # Handle custom U-Boot tarballs as specified by the configuration
 UBOOT_TARBALL = $(call qstrip,$(BR2_TARGET_UBOOT_CUSTOM_TARBALL_LOCATION))
 UBOOT_SITE = $(patsubst %/,%,$(dir $(UBOOT_TARBALL)))
@@ -58,6 +58,10 @@ UBOOT_BINS += u-boot
 ifeq ($(BR2_arc),y)
 UBOOT_MAKE_TARGET += mdbtrick
 endif
+endif
+
+ifeq ($(BR2_TARGET_UBOOT_FORMAT_REMAKE_ELF),y)
+UBOOT_BINS += u-boot.elf
 endif
 
 # Call 'make all' unconditionally
@@ -225,6 +229,18 @@ endif
 
 ifeq ($(BR2_TARGET_UBOOT_NEEDS_LZOP),y)
 UBOOT_DEPENDENCIES += host-lzop
+endif
+
+ifeq ($(BR2_TARGET_UBOOT_NEEDS_GNUTLS),y)
+UBOOT_DEPENDENCIES += host-gnutls
+endif
+
+ifeq ($(BR2_TARGET_UBOOT_NEEDS_UTIL_LINUX),y)
+UBOOT_DEPENDENCIES += host-util-linux
+endif
+
+ifeq ($(BR2_TARGET_UBOOT_NEEDS_XXD),y)
+UBOOT_DEPENDENCIES += host-vim
 endif
 
 # prior to u-boot 2013.10 the license info was in COPYING. Copy it so
